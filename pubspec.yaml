@@ -1,0 +1,35 @@
+name: aprender_a_leer
+description: Una aplicación para aprender a leer usando sílabas, palabras e imágenes.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.0.15
+  flutter_tts: ^3.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  
+  # Si tienes imágenes o assets, descomenta y configura esta sección
+  # assets:
+  #   - assets/images/
+  #   - assets/sounds/
+
+  # Si usas fuentes personalizadas, descomenta y configura esta sección
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: assets/fonts/CustomFont-Regular.ttf
+  #       - asset: assets/fonts/CustomFont-Bold.ttf
+  #         weight: 700
