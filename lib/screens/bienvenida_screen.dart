@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'menu_screen.dart';
 
 class BienvenidaScreen extends StatelessWidget {
+  final double screenWidth;
+  final double screenHeight;
+
+  BienvenidaScreen({required this.screenWidth, required this.screenHeight});
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final orientation = MediaQuery.of(context).orientation;
-
-    // Tamaño relativo al alto de la pantalla
-    double textSizeMultiplier = orientation == Orientation.landscape ? 2.0 : 1.0;
-
     return Scaffold(
       backgroundColor: Colors.orange[100],
       body: SafeArea(
@@ -47,7 +45,7 @@ class BienvenidaScreen extends StatelessWidget {
                     Text(
                       'Hola',
                       style: TextStyle(
-                        fontSize: screenHeight * 0.08 * textSizeMultiplier, // Ajuste dinámico
+                        fontSize: screenHeight * 0.08, // Tamaño relativo al alto
                         fontWeight: FontWeight.bold,
                         color: Colors.deepPurple,
                       ),
@@ -55,7 +53,7 @@ class BienvenidaScreen extends StatelessWidget {
                     Text(
                       'Aprendamos a leer',
                       style: TextStyle(
-                        fontSize: screenHeight * 0.04 * textSizeMultiplier, // Ajuste dinámico
+                        fontSize: screenHeight * 0.04, // Tamaño relativo al alto
                         color: Colors.deepPurple[800],
                       ),
                     ),
@@ -82,7 +80,7 @@ class BienvenidaScreen extends StatelessWidget {
                       child: Text(
                         'Comencemos',
                         style: TextStyle(
-                          fontSize: screenHeight * 0.03 * textSizeMultiplier, // Ajuste dinámico
+                          fontSize: screenHeight * 0.03, // Tamaño relativo
                           color: Colors.white,
                         ),
                       ),

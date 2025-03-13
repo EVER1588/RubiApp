@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
           final screenWidth = MediaQuery.of(context).size.width;
           final screenHeight = MediaQuery.of(context).size.height;
 
-          return BienvenidaScreen();
+          return BienvenidaScreen(screenWidth: screenWidth, screenHeight: screenHeight);
         },
       ),
     );

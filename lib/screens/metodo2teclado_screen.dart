@@ -42,7 +42,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
     "W": ["W", "WEB", "WI"],
     "X": ["X", "XA", "XE", "XI"],
     "Y": ["Y", "YA", "YO"],
-    "Z": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU"]
+    "Z": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU"],
    // Agrega más letras según sea necesario
   };
 
@@ -117,7 +117,7 @@ Widget build(BuildContext context) {
                               child: Container(
                                 padding: EdgeInsets.all(gridPadding),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.8),
+                                  color: Colors.orange.withAlpha((0.8 * 255).round()),
                                   borderRadius: BorderRadius.circular(gridBorderRadius),
                                 ),
                                 child: Center(
@@ -165,7 +165,7 @@ Widget build(BuildContext context) {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.orange.withAlpha((0.8 * 255).round()),
                                   spreadRadius: maxWidth * 0.005,
                                   blurRadius: maxWidth * 0.01,
                                   offset: Offset(0, maxHeight * 0.005),
