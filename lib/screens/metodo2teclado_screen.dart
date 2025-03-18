@@ -15,8 +15,32 @@ class Metodo2Teclado extends StatelessWidget {
   final Map<String, List<String>> silabasPorLetra = {
     "A": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
     "B": ["B", "BA", "BE", "BI", "BO", "BU", "BLA", "BLE", "BLI", "BLO", "BLU"],
-    "C": [
-      "C", "CA", "CE", "CI", "CO", "CU", "CLA", "CLE", "CLI", "CLO", "CLU", "CRA", "CRE", "CRI", "CRO", "CRU", "CIAS"
+    "C": ["C", "CA", "CE", "CI", "CO", "CU", "CLA", "CLE", "CLI", "CLO", "CLU", "CRA", "CRE", "CRI", "CRO", "CRU","CIAS"],
+    "D": ["D", "DA", "DE", "DI", "DO", "DU"],
+    "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
+    "F": ["F", "FA", "FE", "FI", "FO", "FU", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
+    "G": ["G", "GA", "GE", "GI", "GO", "GU", "GEN", "GUA", "GUE", "GUI", "GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
+    "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HU"],
+    "I": ["Í", "I", "IS", "IN", "IR", "IM"],
+    "J": ["J", "JA", "JE", "JI", "JO", "JU"],
+    "K": ["K", "KA", "KE", "KI", "KO", "KU"],
+    "L": ["L", "LA", "LE", "LI", "LO", "LU", "LAS", "LOS", "LUZ", "LLA", "LLE", "LLI", "LLO", "LLU"],
+    "M": ["M", "MA", "ME", "MI", "MO", "MU", "MAS", "MES", "MIS", "MOS"],
+    "N": ["N", "NA", "NE", "NI", "NO", "NU"],
+    "Ñ": ["Ñ", "ÑA", "ÑE", "ÑI", "ÑO", "ÑU"],
+    "O": ["Ó", "O", "OS", "ON"],
+    "P": ["P", "PA", "PE", "PI", "PO", "PU", "PLA", "PLE", "PLI", "PLO", "PLU", "PRA", "PRE", "PRI", "PRO", "PRU"],
+    "Q": ["Q", "QUE", "QUI"],
+    "R": ["R", "RA", "RAL",  "RE", "RI", "RO", "RU"],
+    "S": ["S", "SA", "SE", "SI", "SO", "SU"],
+    "T": ["T", "TA", "TE", "TI", "TO", "TU", "TRA", "TRE", "TRI", "TRO", "TRU"],
+    "U": ["Ú", "U", "UL", "UN", "UR", "US"],
+    "V": ["V", "VA", "VE", "VI", "VO", "VU"],
+    "W": ["W", "WEB", "WI"],
+    "X": ["X", "XA", "XE", "XI"],
+    "Y": ["Y", "YA", "YO"],
+    "Z": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU",
+
     ],
     // Agrega más letras y sílabas aquí...
   };
