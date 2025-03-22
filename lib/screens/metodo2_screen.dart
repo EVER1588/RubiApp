@@ -1,8 +1,9 @@
-// lib/screens/metodo2_screen.dart
+// metodo2_screen.dart
 import 'package:flutter/material.dart';
-import 'metodo2teclado_screen.dart'; // Importar el teclado personalizado
+import 'metodo2teclado_screen.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import '../constants/constants.dart'; // Importar palabras válidas e inicios
+import '../constants/constants.dart';
+import 'package:uuid/uuid.dart'; // Importar paquete para generar UUID
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -12,56 +13,25 @@ class Metodo2Screen extends StatefulWidget {
 }
 
 class _Metodo2ScreenState extends State<Metodo2Screen> {
-  final FlutterTts flutterTts = FlutterTts(); // Instancia de FlutterTts
-  String _letraSeleccionada = ""; // Letra seleccionada en el teclado principal
-  final List<String> silabasEspeciales = [
-    "A", "AL", "DA", "DE", "EL", "EN", "ES", "FE", "HA", "LA",
-    "LE", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
-    "NO", "QUE", "QUI", "SE", "SI", "SU", "TE", "TU", "UN", "VA",
-    "VE", "VI", "WEB", "WI", "Y", "YA", "YO",
-  ];
+  final FlutterTts flutterTts = FlutterTts();
+  String _letraSeleccionada = "";
+  final List<Bloque> elementosArrastradosContenedor1 = [];
+  final List<Bloque> elementosArrastradosContenedor2 = [];
 
-  // Lista de elementos arrastrados en el Contenedor 1
-  final List<String> elementosArrastradosContenedor1 = [];
-  final List<String> elementosArrastradosContenedor2 = [];
-
-  // Función para reproducir una oración usando FlutterTts
-  void reproducirOracion() async {
-    await flutterTts.setLanguage("es-MX"); // Configura el idioma (español de México)
-    await flutterTts.setSpeechRate(1.0); // Velocidad normal
-    await flutterTts.setVolume(1.0); // Volumen máximo
-    await flutterTts.setPitch(1.0); // Tono normal
-    await flutterTts.speak("Esta es una oración de ejemplo."); // Reproduce el texto
-  }
-
-  // Función para manejar la selección de una letra en el teclado principal
-  void _onLetterPressed(String letra) {
+  void _eliminarElemento(String id) {
     setState(() {
-      _letraSeleccionada = letra; // Actualiza la letra seleccionada
-    });
-  }
-
-  // Función para eliminar un elemento arrastrado
-  void _eliminarElemento(String elemento) {
-    setState(() {
-      if (elementosArrastradosContenedor2.contains(elemento)) {
-        elementosArrastradosContenedor2.remove(elemento); // Eliminar del Contenedor 2 primero
-      } else if (elementosArrastradosContenedor1.contains(elemento)) {
-        elementosArrastradosContenedor1.remove(elemento); // Luego del Contenedor 1
-      }
+      elementosArrastradosContenedor1.removeWhere((bloque) => bloque.id == id);
+      elementosArrastradosContenedor2.removeWhere((bloque) => bloque.id == id);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Obtener el ancho y alto de la pantalla
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Método 2'),
-      ),
+      appBar: AppBar(title: Text('Método 2')),
       body: Column(
         children: [
           // Contenedor 1 (Azul)
@@ -69,72 +39,18 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
             flex: 1,
             child: DragTarget<String>(
               builder: (context, candidateData, rejectedData) {
-                return Container(
-                  width: screenWidth * 0.95,
-                  margin: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.05,
-                    vertical: screenHeight * 0.02,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(0, 0, 255, 0.3),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Wrap(
-                      spacing: 8.0,
-                      children: elementosArrastradosContenedor1.map((elemento) {
-                        return Draggable<String>(
-                          data: elemento,
-                          feedback: Material(
-                            child: Chip(
-                              label: Text(
-                                elemento,
-                                style: TextStyle(fontSize: 16, color: Colors.white),
-                              ),
-                              backgroundColor: silabasEspeciales.contains(elemento)
-                                  ? Colors.green
-                                  : Colors.blue,
-                            ),
-                          ),
-                          childWhenDragging: Opacity(
-                            opacity: 0.5,
-                            child: Chip(
-                              label: Text(
-                                elemento,
-                                style: TextStyle(fontSize: 16, color: Colors.white),
-                              ),
-                              backgroundColor: silabasEspeciales.contains(elemento)
-                                  ? Colors.green
-                                  : Colors.blue,
-                            ),
-                          ),
-                          child: Chip(
-                            label: Text(
-                              elemento,
-                              style: TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                            backgroundColor: silabasEspeciales.contains(elemento)
-                                ? Colors.green
-                                : Colors.blue,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                );
+                return _buildContainer(screenWidth, screenHeight, Colors.blue.withOpacity(0.3), elementosArrastradosContenedor1);
               },
               onWillAccept: (data) {
-                // Solo acepta bloques especiales (verdes)
                 return silabasEspeciales.contains(data);
               },
               onAccept: (data) {
                 setState(() {
-                  elementosArrastradosContenedor1.add(data);
+                  elementosArrastradosContenedor1.add(Bloque(contenido: data));
                 });
               },
             ),
           ),
-
           // Contenedor 2 (Verde)
           Expanded(
             flex: 2,
@@ -142,93 +58,14 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               children: [
                 DragTarget<String>(
                   builder: (context, candidateData, rejectedData) {
-                    return Container(
-                      width: screenWidth * 0.95,
-                      margin: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.05,
-                        vertical: screenHeight * 0.02,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(0, 128, 0, 0.3),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Wrap(
-                          spacing: 8.0,
-                          children: elementosArrastradosContenedor2.map((elemento) {
-                            final esEspecial = silabasEspeciales.contains(elemento);
-                            final esInicioDePalabra = iniciosDePalabrasValidas.contains(elemento);
-                            final esPalabraValida = palabrasValidas.contains(elemento);
-
-                            return Draggable<String>(
-                              data: elemento,
-                              feedback: Material(
-                                child: Chip(
-                                  label: Text(
-                                    elemento,
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                  backgroundColor: esPalabraValida
-                                      ? Colors.green
-                                      : esInicioDePalabra
-                                          ? Colors.orange
-                                          : Colors.blue,
-                                ),
-                              ),
-                              childWhenDragging: Opacity(
-                                opacity: 0.5,
-                                child: Chip(
-                                  label: Text(
-                                    elemento,
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                  backgroundColor: esPalabraValida
-                                      ? Colors.green
-                                      : esInicioDePalabra
-                                          ? Colors.orange
-                                          : Colors.blue,
-                                ),
-                              ),
-                              child: Chip(
-                                label: Text(
-                                  elemento,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                                backgroundColor: esPalabraValida
-                                    ? Colors.green
-                                    : esInicioDePalabra
-                                        ? Colors.orange
-                                        : Colors.blue,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    );
+                    return _buildContainer(screenWidth, screenHeight, Colors.green.withOpacity(0.3), elementosArrastradosContenedor2);
                   },
                   onWillAccept: (data) {
-                    // Acepta todos los bloques
                     return true;
                   },
                   onAccept: (data) {
                     setState(() {
-                      final index = elementosArrastradosContenedor2.indexOf(data);
-                      if (index != -1) {
-                        final silabaActual = elementosArrastradosContenedor2[index];
-                        final nuevaCombinacion = silabaActual + data;
-
-                        // Validar si la combinación resultante es una palabra válida
-                        if (palabrasValidas.contains(nuevaCombinacion)) {
-                          elementosArrastradosContenedor2[index] = nuevaCombinacion;
-                          silabasEspeciales.add(nuevaCombinacion); // Marcar como especial
-                        }
-                        // Validar si la combinación es el inicio de una palabra válida
-                        else if (iniciosDePalabrasValidas.contains(nuevaCombinacion)) {
-                          elementosArrastradosContenedor2[index] = nuevaCombinacion;
-                        }
-                      } else {
-                        elementosArrastradosContenedor2.add(data);
-                      }
+                      elementosArrastradosContenedor2.add(Bloque(contenido: data));
                     });
                   },
                 ),
@@ -255,12 +92,15 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               ],
             ),
           ),
-
           // Teclado Principal y Secundario
           Expanded(
             flex: 3,
             child: Metodo2Teclado(
-              onLetterPressed: _onLetterPressed,
+              onLetterPressed: (letra) {
+                setState(() {
+                  _letraSeleccionada = letra;
+                });
+              },
               letraSeleccionada: _letraSeleccionada,
             ),
           ),
@@ -268,4 +108,81 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       ),
     );
   }
+
+  Widget _buildContainer(double width, double height, Color color, List<Bloque> bloques) {
+    return Container(
+      width: width * 0.95,
+      margin: EdgeInsets.symmetric(horizontal: width * 0.05, vertical: height * 0.02),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+      child: Center(
+        child: Wrap(
+          spacing: 8.0,
+          children: bloques.map((bloque) {
+            final esEspecial = silabasEspeciales.contains(bloque.contenido);
+            final esInicioDePalabra = iniciosDePalabrasValidas.contains(bloque.contenido) ||
+                iniciosDePalabras3Silabas.contains(bloque.contenido) ||
+                iniciosDePalabras4Silabas.contains(bloque.contenido);
+            final esPalabraValida = palabrasValidas.contains(bloque.contenido);
+
+            return Draggable<String>(
+              data: bloque.id, // Pasar el ID único del bloque
+              feedback: Material(
+                child: Chip(
+                  label: Text(
+                    bloque.contenido,
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                  backgroundColor: esPalabraValida
+                      ? Colors.green
+                      : esInicioDePalabra
+                          ? Colors.orange
+                          : esEspecial
+                              ? Colors.green
+                              : Colors.blue,
+                ),
+              ),
+              childWhenDragging: Opacity(
+                opacity: 0.5,
+                child: Chip(
+                  label: Text(
+                    bloque.contenido,
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                  backgroundColor: esPalabraValida
+                      ? Colors.green
+                      : esInicioDePalabra
+                          ? Colors.orange
+                          : esEspecial
+                              ? Colors.green
+                              : Colors.blue,
+                ),
+              ),
+              child: Chip(
+                label: Text(
+                  bloque.contenido,
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+                backgroundColor: esPalabraValida
+                    ? Colors.green
+                    : esInicioDePalabra
+                        ? Colors.orange
+                        : esEspecial
+                            ? Colors.green
+                            : Colors.blue,
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+// Clase Bloque
+class Bloque {
+  final String id; // Identificador único
+  final String contenido; // Contenido del bloque (por ejemplo, "AL")
+
+  Bloque({required this.contenido})
+      : id = const Uuid().v4(); // Generar un UUID único para cada bloque
 }
