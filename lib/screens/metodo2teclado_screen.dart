@@ -1,5 +1,6 @@
 // lib/screens/metodo2teclado_screen.dart
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 class Metodo2Teclado extends StatelessWidget {
   final Function(String) onLetterPressed;
@@ -94,8 +95,11 @@ class Metodo2Teclado extends StatelessWidget {
                         final silaba = silabasPorLetra[letraSeleccionada]![index];
                         final esSilabaEspecial = silabasEspeciales.contains(silaba);
 
-                        return Draggable<String>(
-                          data: silaba,
+                        return Draggable<Map<String, String>>(
+                          data: {
+                            'id': const Uuid().v4(),
+                            'contenido': silaba,
+                          },
                           feedback: Material(
                             child: Container(
                               width: screenWidth * 0.15,
