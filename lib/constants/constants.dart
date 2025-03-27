@@ -1,11 +1,28 @@
-// lib/constants/constants.dart
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
-// Lista de palabras válidas completas
+class Bloque {
+  final String id;
+  final String contenido;
+  final Color color;
+  final Offset posicion;
+
+  Bloque({
+    required this.contenido,
+    this.color = Colors.blue,
+    required this.posicion,
+  }) : id = const Uuid().v4();
+
+  Map<String, String> get dragData => {
+    'id': id,
+    'contenido': contenido,
+  };
+}
+
 const List<String> palabrasValidas = [
   'LA', 'QUE', 'EL', 'MESA', 'CAMA', 'PERRO', 'GATO', 'LUNA', 'SOL', 'ZAPATO', 'HUMANO',
 ];
 
-// Lista de sílabas especiales
 const List<String> silabasEspeciales = [
   "A", "AL", "DA", "DE", "EL", "EN", "ES", "FE", "HA", "LA",
   "LE", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
@@ -13,12 +30,14 @@ const List<String> silabasEspeciales = [
   "VE", "VI", "WEB", "WI", "Y", "YA", "YO",
 ];
 
-// Nueva lista: Inicios de palabras de 3 sílabas (primeras 2 sílabas)
 final List<String> iniciosDePalabras3Silabas = [
   'MES', 'CAM', 'PER', 'GAT', 'LUN',
 ];
 
-// Nueva lista: Inicios de palabras de 4 sílabas (primeras 3 sílabas)
 final List<String> iniciosDePalabras4Silabas = [
   'HUMA', 'ZAPA',
 ];
+
+const double blockWidth = 60.0;
+const double blockHeight = 40.0;
+const double blockSpacing = 8.0;

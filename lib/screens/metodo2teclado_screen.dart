@@ -100,6 +100,9 @@ class Metodo2Teclado extends StatelessWidget {
                             'id': const Uuid().v4(),
                             'contenido': silaba,
                           },
+                          onDragCompleted: () {
+                            onLetterPressed(""); // Cierra el teclado secundario
+                          },
                           feedback: Material(
                             child: Container(
                               width: screenWidth * 0.15,
