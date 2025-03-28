@@ -12,6 +12,9 @@ class Metodo2Screen extends StatefulWidget {
 class _Metodo2ScreenState extends State<Metodo2Screen> {
   final FlutterTts flutterTts = FlutterTts();
   String _letraSeleccionada = "";
+  
+  // Lista de bloques del contenedor 2
+  List<String> bloquesContenedor2 = [];
 
   @override
   Widget build(BuildContext context) {
@@ -47,25 +50,51 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
             ),
           ),
 
-          // Contenedor 2 (Verde)
+          // Contenedor 2 (Verde) con DragTarget utilizando onAcceptWithDetails
           Expanded(
             flex: 2,
-            child: Container(
-              width: screenWidth * 0.95,
-              margin: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.05,
-                vertical: screenHeight * 0.02,
-              ),
-              decoration: BoxDecoration(
-                color: Color.fromRGBO(0, 128, 0, 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  'Contenedor 2',
-                  style: TextStyle(fontSize: 18, color: Colors.green),
-                ),
-              ),
+            child: DragTarget<Map<String, String>>(
+              onWillAcceptWithDetails: (details) => true,
+              onAcceptWithDetails: (details) {
+                setState(() {
+                  // Extraer el contenido del bloque arrastrado desde details.data
+                  final bloque = details.data['contenido']!;
+                  bloquesContenedor2.add(bloque);
+                });
+              },
+              builder: (context, candidateData, rejectedData) {
+                return Container(
+                  width: screenWidth * 0.95,
+                  margin: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.05,
+                    vertical: screenHeight * 0.02,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Color.fromRGBO(0, 128, 0, 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  // Alineamos el contenido en la parte superior izquierda
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Wrap(
+                        spacing: 8.0,
+                        runSpacing: 4.0,
+                        children: bloquesContenedor2.map((bloque) {
+                          return Chip(
+                            label: Text(
+                              bloque,
+                              style: TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                            backgroundColor: Colors.green,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
