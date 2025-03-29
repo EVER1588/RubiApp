@@ -82,12 +82,40 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                         spacing: 8.0,
                         runSpacing: 4.0,
                         children: bloquesContenedor2.map((bloque) {
-                          return Chip(
-                            label: Text(
-                              bloque,
-                              style: TextStyle(fontSize: 16, color: Colors.white),
+                          return Draggable<Map<String, String>>(
+                            data: {'contenido': bloque},
+                            feedback: Material(
+                              color: Colors.transparent,
+                              child: Chip(
+                                label: Text(
+                                  bloque,
+                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
                             ),
-                            backgroundColor: Colors.green,
+                            childWhenDragging: Opacity(
+                              opacity: 0.5,
+                              child: Chip(
+                                label: Text(
+                                  bloque,
+                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            ),
+                            onDragCompleted: () {
+                              setState(() {
+                                bloquesContenedor2.remove(bloque);
+                              });
+                            },
+                            child: Chip(
+                              label: Text(
+                                bloque,
+                                style: TextStyle(fontSize: 16, color: Colors.white),
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
                           );
                         }).toList(),
                       ),
