@@ -61,10 +61,13 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               onWillAcceptWithDetails: (details) => true,
               onAcceptWithDetails: (details) {
                 setState(() {
-                  // Extraer el contenido del bloque arrastrado desde details.data
+                  // Extraer el contenido y el color del bloque arrastrado
                   final bloque = details.data['contenido']!;
+                  final color = details.data['color'] ?? BlockColor.blue;
+
+                  // Agregar el bloque al contenedor 2 con su color correspondiente
                   bloquesContenedor2.add(bloque);
-                  coloresBloques[bloque] = BlockColor.blue; // Estado inicial
+                  coloresBloques[bloque] = color;
                 });
               },
               builder: (context, candidateData, rejectedData) {
@@ -109,7 +112,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                             },
                             builder: (context, candidateData, rejectedData) {
                               return Draggable<Map<String, dynamic>>(
-                                data: {'contenido': bloque},
+                                data: {
+                                  'contenido': bloque,
+                                  'color': coloresBloques[bloque], // Pasar el color actual
+                                },
                                 feedback: Material(
                                   color: Colors.transparent,
                                   child: Chip(
