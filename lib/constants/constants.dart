@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 const List<String> palabrasValidas = [
-  "ABAJO", "ABRAZAR", "ABRIGO", "ABRIGOS", "ABRIR",
+  "ABAJO", "ABRAZAR", "ABRIGO", "ABRIGOS", "ABRIR", "CAMA", "CAMAS",
   "AGUA", "ÁGUILA", "ÁGUILAS", "AHORA", "ALGO", "ALLÁ", "ALMOHADA", "ALMOHADAS",
   "ALTO", "ALTOS", "AMARILLO", "AMARILLOS", "AMIGA", "AMIGAS", "AMIGO", "AMIGOS",
   "AMOR", "ANDAR", "ANIMAL", "ANIMALES",
@@ -46,7 +46,7 @@ const List<String> palabrasValidas = [
   "GIRANDO", "GIRAR", "GIRÓ", "GORILA", "GORILAS", "GORRA", "GORRAS",
   "GORRO", "GORROS", "GRANDE", "GRANDES", "GRIS", "GUANTE", "GUANTES",
   "GUERRA", "GUERRAS", "HABLAR", "HACER", "HACIA", "HIELO", "HIJO",
-  "HIJOS", "HOGAR", "HOGARES", "HOJA", "HOJAS", "HONGO", "HONGOS",
+  "HIJOS", "HOGAR", "HOGARES", "HOJA", "HOJAS", "HOLA", "HONGO", "HONGOS",
   "HORMIGA", "HORMIGAS", "HOY", "HUECO", "HUELLA", "HUELLAS", "IDEA",
   "IDEAS", "IGLESIA", "IGLESIAS", "IGUAL", "ISLA", "ISLAS", "IRSE",
   "JABALÍ", "JABALÍES", "JARDÍN", "JARDINES", "JUGAR", "LAGO", "LAGOS",

@@ -17,6 +17,9 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   // Lista de bloques del contenedor 2
   List<String> bloquesContenedor2 = [];
 
+  // Mapa para almacenar los colores de los bloques
+  Map<String, BlockColor> coloresBloques = {};
+
   @override
   Widget build(BuildContext context) {
     // Obtener el ancho y alto de la pantalla
@@ -61,6 +64,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   // Extraer el contenido del bloque arrastrado desde details.data
                   final bloque = details.data['contenido']!;
                   bloquesContenedor2.add(bloque);
+                  coloresBloques[bloque] = BlockColor.blue; // Estado inicial
                 });
               },
               builder: (context, candidateData, rejectedData) {
@@ -97,8 +101,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                 bloquesContenedor2.remove(data['contenido']);
                                 bloquesContenedor2.add(nuevaCadena);
 
-                                // Actualizar el color del bloque (opcional, si se usa visualización de color)
-                                // Esto depende de cómo quieras manejar los colores en la interfaz.
+                                // Actualizar el color del bloque concatenado
+                                coloresBloques.remove(bloque);
+                                coloresBloques.remove(data['contenido']);
+                                coloresBloques[nuevaCadena] = nuevoColor;
                               });
                             },
                             builder: (context, candidateData, rejectedData) {
@@ -111,7 +117,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                       bloque,
                                       style: TextStyle(fontSize: 16, color: Colors.white),
                                     ),
-                                    backgroundColor: Colors.green, // Cambiar según el estado
+                                    backgroundColor: _getColor(coloresBloques[bloque]),
                                   ),
                                 ),
                                 childWhenDragging: Opacity(
@@ -121,7 +127,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                       bloque,
                                       style: TextStyle(fontSize: 16, color: Colors.white),
                                     ),
-                                    backgroundColor: Colors.green, // Cambiar según el estado
+                                    backgroundColor: _getColor(coloresBloques[bloque]),
                                   ),
                                 ),
                                 child: Chip(
@@ -129,7 +135,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                     bloque,
                                     style: TextStyle(fontSize: 16, color: Colors.white),
                                   ),
-                                  backgroundColor: Colors.green, // Cambiar según el estado
+                                  backgroundColor: _getColor(coloresBloques[bloque]),
                                 ),
                               );
                             },
@@ -158,5 +164,19 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
         ],
       ),
     );
+  }
+
+  // Función para obtener el color correspondiente a un estado
+  Color _getColor(BlockColor? color) {
+    switch (color) {
+      case BlockColor.green:
+        return Colors.green;
+      case BlockColor.orange:
+        return Colors.orange;
+      case BlockColor.red:
+        return Colors.red;
+      default:
+        return Colors.blue; // Estado inicial
+    }
   }
 }

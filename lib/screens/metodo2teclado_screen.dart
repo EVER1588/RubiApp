@@ -15,7 +15,7 @@ class Metodo2Teclado extends StatelessWidget {
   // Mapa de letras y sus sílabas correspondientes
   final Map<String, List<String>> silabasPorLetra = {
     "A": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
-    "B": ["B", "BA", "BE", "BI", "BO", "BU", "BLA", "BLE", "BLI", "BLO", "BLU"],
+    "B": ["B", "BA", "BE", "BI", "BO", "BU", "BLA", "BLE", "BLI", "BLO", "BLU", "BRA", "BRE", "BRI", "BRO", "BRU", "BRAN", "BREN", "BRIN", "BRON", "BRUN",],
     "C": ["C", "CA", "CE", "CI", "CO", "CU", "CLA", "CLE", "CLI", "CLO", "CLU", "CRA", "CRE", "CRI", "CRO", "CRU","CIAS"],
     "D": ["D", "DA", "DE", "DI", "DO", "DU"],
     "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
