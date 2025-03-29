@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'metodo2teclado_screen.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../constants/concatenacion_screen.dart'; // Importa el archivo donde está definida la función
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -53,7 +54,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
           // Contenedor 2 (Verde) con DragTarget utilizando onAcceptWithDetails
           Expanded(
             flex: 2,
-            child: DragTarget<Map<String, String>>(
+            child: DragTarget<Map<String, dynamic>>(
               onWillAcceptWithDetails: (details) => true,
               onAcceptWithDetails: (details) {
                 setState(() {
@@ -82,40 +83,56 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                         spacing: 8.0,
                         runSpacing: 4.0,
                         children: bloquesContenedor2.map((bloque) {
-                          return Draggable<Map<String, String>>(
-                            data: {'contenido': bloque},
-                            feedback: Material(
-                              color: Colors.transparent,
-                              child: Chip(
-                                label: Text(
-                                  bloque,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                                backgroundColor: Colors.green,
-                              ),
-                            ),
-                            childWhenDragging: Opacity(
-                              opacity: 0.5,
-                              child: Chip(
-                                label: Text(
-                                  bloque,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                                backgroundColor: Colors.green,
-                              ),
-                            ),
-                            onDragCompleted: () {
+                          return DragTarget<Map<String, dynamic>>(
+                            onWillAccept: (data) => true,
+                            onAccept: (data) {
                               setState(() {
+                                // Concatenar los bloques utilizando la función `concatenarBloques`
+                                final resultado = concatenarBloques(bloque, data['contenido']);
+                                final nuevaCadena = resultado['cadena'];
+                                final nuevoColor = resultado['color'];
+
+                                // Reemplazar los bloques con el bloque concatenado
                                 bloquesContenedor2.remove(bloque);
+                                bloquesContenedor2.remove(data['contenido']);
+                                bloquesContenedor2.add(nuevaCadena);
+
+                                // Actualizar el color del bloque (opcional, si se usa visualización de color)
+                                // Esto depende de cómo quieras manejar los colores en la interfaz.
                               });
                             },
-                            child: Chip(
-                              label: Text(
-                                bloque,
-                                style: TextStyle(fontSize: 16, color: Colors.white),
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
+                            builder: (context, candidateData, rejectedData) {
+                              return Draggable<Map<String, dynamic>>(
+                                data: {'contenido': bloque},
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: Chip(
+                                    label: Text(
+                                      bloque,
+                                      style: TextStyle(fontSize: 16, color: Colors.white),
+                                    ),
+                                    backgroundColor: Colors.green, // Cambiar según el estado
+                                  ),
+                                ),
+                                childWhenDragging: Opacity(
+                                  opacity: 0.5,
+                                  child: Chip(
+                                    label: Text(
+                                      bloque,
+                                      style: TextStyle(fontSize: 16, color: Colors.white),
+                                    ),
+                                    backgroundColor: Colors.green, // Cambiar según el estado
+                                  ),
+                                ),
+                                child: Chip(
+                                  label: Text(
+                                    bloque,
+                                    style: TextStyle(fontSize: 16, color: Colors.white),
+                                  ),
+                                  backgroundColor: Colors.green, // Cambiar según el estado
+                                ),
+                              );
+                            },
                           );
                         }).toList(),
                       ),
