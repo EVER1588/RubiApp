@@ -5,11 +5,13 @@ import 'package:uuid/uuid.dart';
 class Metodo2Teclado extends StatelessWidget {
   final Function(String) onLetterPressed;
   final String letraSeleccionada;
+  final VoidCallback onClosePressed; // Nuevo parámetro para manejar el cierre
 
   Metodo2Teclado({
     Key? key,
     required this.onLetterPressed,
     required this.letraSeleccionada,
+    required this.onClosePressed, // Asegúrate de marcarlo como requerido
   }) : super(key: key);
 
   // Mapa de letras y sus sílabas correspondientes
@@ -101,7 +103,7 @@ class Metodo2Teclado extends StatelessWidget {
                             'contenido': silaba,
                           },
                           onDragCompleted: () {
-                            onLetterPressed(""); // Cierra el teclado secundario
+                            onClosePressed(); // Llamar directamente al callback de cierre
                           },
                           feedback: Material(
                             child: Container(
@@ -161,9 +163,7 @@ class Metodo2Teclado extends StatelessWidget {
                   bottom: 25, // Distancia desde abajo
                   right: 25, // Distancia desde la derecha
                   child: FloatingActionButton(
-                    onPressed: () {
-                      onLetterPressed(""); // Cierra el teclado secundario
-                    },
+                    onPressed: onClosePressed, // Llamar directamente al callback de cierre
                     backgroundColor: Colors.red, // Color del botón
                     child: Icon(Icons.close, color: Colors.white), // Ícono de cerrar
                   ),
