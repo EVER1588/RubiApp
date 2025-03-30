@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../constants/constants.dart'; // Importar las funciones globales
 
 class Metodo1Screen extends StatefulWidget {
   @override
@@ -7,7 +7,6 @@ class Metodo1Screen extends StatefulWidget {
 }
 
 class _Metodo1ScreenState extends State<Metodo1Screen> {
-  final FlutterTts _flutterTts = FlutterTts(); // Instancia de FlutterTts
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
 
@@ -62,20 +61,12 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   @override
   void initState() {
     super.initState();
-    _configureTts(); // Configura el TTS al iniciar la pantalla
-  }
-
-  // Configura el TTS (idioma, velocidad, volumen, tono)
-  void _configureTts() async {
-    await _flutterTts.setLanguage("es-MX"); // Español latino (México)
-    await _flutterTts.setSpeechRate(1.0); // Velocidad de habla (1.0 es normal)
-    await _flutterTts.setVolume(1.0); // Volumen (0.0 a 1.0)
-    await _flutterTts.setPitch(1.0); // Tono (0.5 a 2.0)
+    configurarFlutterTts(); // Configurar Flutter TTS al iniciar la pantalla
   }
 
   // Reproduce el texto usando TTS
   Future<void> _speak(String text) async {
-    await _flutterTts.speak(text);
+    await decirTexto(text); // Usar la función global
   }
 
   // Agrega una letra al bloque actual y valida la sílaba

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'metodo2teclado_screen.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../constants/concatenacion_screen.dart'; // Importa el archivo donde está definida la función
+import '../constants/constants.dart'; // Importar las funciones globales
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   @override
   void initState() {
     super.initState();
-    _configurarFlutterTts();
+    configurarFlutterTts(); // Configurar Flutter TTS al iniciar la pantalla
   }
 
   // Configurar Flutter TTS
@@ -83,7 +84,6 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   onWillAcceptWithDetails: (details) => true,
                   onAcceptWithDetails: (details) {
                     setState(() {
-                      // Extraer el contenido y el color del bloque arrastrado
                       final bloque = details.data['contenido']!;
                       final color = details.data['color'] ?? BlockColor.blue;
 
@@ -111,34 +111,59 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                             spacing: 8.0,
                             runSpacing: 4.0,
                             children: bloquesContenedor2.map((bloque) {
-                              return DragTarget<Map<String, dynamic>>(
-                                onWillAccept: (data) => true,
-                                onAccept: (data) {
-                                  setState(() {
-                                    // Concatenar los bloques utilizando la función `concatenarBloques`
-                                    final resultado = concatenarBloques(bloque, data['contenido']);
-                                    final nuevaCadena = resultado['cadena'];
-                                    final nuevoColor = resultado['color'];
-
-                                    // Reemplazar los bloques con el bloque concatenado
-                                    bloquesContenedor2.remove(bloque);
-                                    bloquesContenedor2.remove(data['contenido']);
-                                    bloquesContenedor2.add(nuevaCadena);
-
-                                    // Actualizar el color del bloque concatenado
-                                    coloresBloques.remove(bloque);
-                                    coloresBloques.remove(data['contenido']);
-                                    coloresBloques[nuevaCadena] = nuevoColor;
-                                  });
+                              return GestureDetector(
+                                onTap: () {
+                                  decirTexto(bloque); // Leer el texto al tocar el bloque
                                 },
-                                builder: (context, candidateData, rejectedData) {
-                                  return Draggable<Map<String, dynamic>>(
-                                    data: {
-                                      'contenido': bloque,
-                                      'color': coloresBloques[bloque], // Pasar el color actual
-                                    },
-                                    feedback: Material(
-                                      color: Colors.transparent,
+                                child: DragTarget<Map<String, dynamic>>(
+                                  onWillAccept: (data) => true,
+                                  onAccept: (data) {
+                                    setState(() {
+                                      // Concatenar los bloques utilizando la función `concatenarBloques`
+                                      final resultado = concatenarBloques(bloque, data['contenido']);
+                                      final nuevaCadena = resultado['cadena'];
+                                      final nuevoColor = resultado['color'];
+
+                                      // Reemplazar los bloques con el bloque concatenado
+                                      bloquesContenedor2.remove(bloque);
+                                      bloquesContenedor2.remove(data['contenido']);
+                                      bloquesContenedor2.add(nuevaCadena);
+
+                                      // Actualizar el color del bloque concatenado
+                                      coloresBloques.remove(bloque);
+                                      coloresBloques.remove(data['contenido']);
+                                      coloresBloques[nuevaCadena] = nuevoColor;
+
+                                      // Leer el bloque resultante
+                                      decirTexto(nuevaCadena);
+                                    });
+                                  },
+                                  builder: (context, candidateData, rejectedData) {
+                                    return Draggable<Map<String, dynamic>>(
+                                      data: {
+                                        'contenido': bloque,
+                                        'color': coloresBloques[bloque], // Pasar el color actual
+                                      },
+                                      feedback: Material(
+                                        color: Colors.transparent,
+                                        child: Chip(
+                                          label: Text(
+                                            bloque,
+                                            style: TextStyle(fontSize: 16, color: Colors.white),
+                                          ),
+                                          backgroundColor: _getColor(coloresBloques[bloque]),
+                                        ),
+                                      ),
+                                      childWhenDragging: Opacity(
+                                        opacity: 0.5,
+                                        child: Chip(
+                                          label: Text(
+                                            bloque,
+                                            style: TextStyle(fontSize: 16, color: Colors.white),
+                                          ),
+                                          backgroundColor: _getColor(coloresBloques[bloque]),
+                                        ),
+                                      ),
                                       child: Chip(
                                         label: Text(
                                           bloque,
@@ -146,26 +171,9 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                         ),
                                         backgroundColor: _getColor(coloresBloques[bloque]),
                                       ),
-                                    ),
-                                    childWhenDragging: Opacity(
-                                      opacity: 0.5,
-                                      child: Chip(
-                                        label: Text(
-                                          bloque,
-                                          style: TextStyle(fontSize: 16, color: Colors.white),
-                                        ),
-                                        backgroundColor: _getColor(coloresBloques[bloque]),
-                                      ),
-                                    ),
-                                    child: Chip(
-                                      label: Text(
-                                        bloque,
-                                        style: TextStyle(fontSize: 16, color: Colors.white),
-                                      ),
-                                      backgroundColor: _getColor(coloresBloques[bloque]),
-                                    ),
-                                  );
-                                },
+                                    );
+                                  },
+                                ),
                               );
                             }).toList(),
                           ),
@@ -187,6 +195,9 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                         final bloque = data['contenido']!;
                         bloquesContenedor2.remove(bloque);
                         coloresBloques.remove(bloque);
+
+                        // Validar los bloques restantes
+                        _validarBloquesRestantes();
                       });
                     },
                     builder: (context, candidateData, rejectedData) {
@@ -214,27 +225,20 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
             flex: 3,
             child: Metodo2Teclado(
               onLetterPressed: (letra) async {
-                // Decir la letra en voz alta inmediatamente
-                _decirLetra(letra);
-
-                // Esperar 600 ms antes de abrir el teclado secundario
-                await Future.delayed(Duration(milliseconds: 600));
-
-                // Actualizar el estado y abrir el teclado secundario
+                decirTexto(letra); // Leer la letra seleccionada
+                await Future.delayed(Duration(milliseconds: 10));
                 setState(() {
-                  _letraSeleccionada = letra; // Actualizar la letra seleccionada
+                  _letraSeleccionada = letra;
                 });
-
-                print("Teclado secundario abierto para la letra: $letra");
               },
               letraSeleccionada: _letraSeleccionada,
               onClosePressed: () {
-                // Cerrar el teclado secundario inmediatamente
                 setState(() {
-                  _letraSeleccionada = ""; // Restablecer la letra seleccionada
+                  _letraSeleccionada = ""; // Cerrar el teclado secundario
                 });
-
-                print("Teclado secundario cerrado");
+              },
+              onSilabaDragged: (silaba) {
+                decirTexto(silaba); // Leer la sílaba arrastrada
               },
             ),
           ),
@@ -255,5 +259,30 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       default:
         return Colors.blue; // Estado inicial
     }
+  }
+
+  void _validarBloquesRestantes() {
+    for (var bloque in bloquesContenedor2) {
+      // Validar y asignar el color correspondiente
+      if (palabrasValidas.contains(bloque)) {
+        coloresBloques[bloque] = BlockColor.green; // Palabra válida
+      } else if (silabasEspeciales.contains(bloque)) {
+        coloresBloques[bloque] = BlockColor.orange; // Bloque especial
+      } else if (_esSilabaDeLista(bloque)) {
+        coloresBloques[bloque] = BlockColor.blue; // Bloque de una sola sílaba o sílaba válida
+      } else {
+        coloresBloques[bloque] = BlockColor.red; // Bloque inválido
+      }
+    }
+  }
+
+  // Nueva función para verificar si un bloque está en silabasPorLetra
+  bool _esSilabaDeLista(String bloque) {
+    for (var lista in silabasPorLetra.values) {
+      if (lista.contains(bloque)) {
+        return true; // El bloque está en la lista de sílabas
+      }
+    }
+    return false; // El bloque no está en ninguna lista de sílabas
   }
 }

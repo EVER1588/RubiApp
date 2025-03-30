@@ -1,59 +1,21 @@
 // lib/screens/metodo2teclado_screen.dart
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../constants/constants.dart'; // Importar las funciones globales y silabasPorLetra
 
 class Metodo2Teclado extends StatelessWidget {
   final Function(String) onLetterPressed;
   final String letraSeleccionada;
   final VoidCallback onClosePressed; // Nuevo parámetro para manejar el cierre
+  final Function(String) onSilabaDragged; // Nuevo parámetro para manejar el arrastre de sílabas
 
   Metodo2Teclado({
     Key? key,
     required this.onLetterPressed,
     required this.letraSeleccionada,
     required this.onClosePressed, // Asegúrate de marcarlo como requerido
+    required this.onSilabaDragged, // Asegúrate de marcarlo como requerido
   }) : super(key: key);
-
-  // Mapa de letras y sus sílabas correspondientes
-  final Map<String, List<String>> silabasPorLetra = {
-    "A": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
-    "B": ["B", "BA", "BE", "BI", "BO", "BU", "BLA", "BLE", "BLI", "BLO", "BLU", "BRA", "BRE", "BRI", "BRO", "BRU", "BRAN", "BREN", "BRIN", "BRON", "BRUN",],
-    "C": ["C", "CA", "CE", "CI", "CO", "CU", "CLA", "CLE", "CLI", "CLO", "CLU", "CRA", "CRE", "CRI", "CRO", "CRU","CIAS"],
-    "D": ["D", "DA", "DE", "DI", "DO", "DU"],
-    "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
-    "F": ["F", "FA", "FE", "FI", "FO", "FU", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
-    "G": ["G", "GA", "GE", "GI", "GO", "GU", "GEN", "GUA", "GUE", "GUI", "GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
-    "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HU"],
-    "I": ["Í", "I", "IS", "IN", "IR", "IM"],
-    "J": ["J", "JA", "JE", "JI", "JO", "JU"],
-    "K": ["K", "KA", "KE", "KI", "KO", "KU"],
-    "L": ["L", "LA", "LE", "LI", "LO", "LU", "LAS", "LOS", "LUZ", "LLA", "LLE", "LLI", "LLO", "LLU"],
-    "M": ["M", "MA", "ME", "MI", "MO", "MU", "MAS", "MES", "MIS", "MOS"],
-    "N": ["N", "NA", "NE", "NI", "NO", "NU"],
-    "Ñ": ["Ñ", "ÑA", "ÑE", "ÑI", "ÑO", "ÑU"],
-    "O": ["Ó", "O", "OS", "ON"],
-    "P": ["P", "PA", "PE", "PI", "PO", "PU", "PLA", "PLE", "PLI", "PLO", "PLU", "PRA", "PRE", "PRI", "PRO", "PRU"],
-    "Q": ["Q", "QUE", "QUI"],
-    "R": ["R", "RA", "RAL",  "RE", "RI", "RO", "RU"],
-    "S": ["S", "SA", "SE", "SI", "SO", "SU"],
-    "T": ["T", "TA", "TE", "TI", "TO", "TU", "TRA", "TRE", "TRI", "TRO", "TRU"],
-    "U": ["Ú", "U", "UL", "UN", "UR", "US"],
-    "V": ["V", "VA", "VE", "VI", "VO", "VU"],
-    "W": ["W", "WEB", "WI"],
-    "X": ["X", "XA", "XE", "XI"],
-    "Y": ["Y", "YA", "YO"],
-    "Z": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU",
-
-    ],
-    // Agrega más letras y sílabas aquí...
-  };
-
-  final List<String> silabasEspeciales = [
-    "A", "AL", "DA", "DE", "EL", "EN", "ES", "FE", "HA", "LA",
-    "LE", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
-    "NO", "QUE", "QUI", "SE", "SI", "SU", "TE", "TU", "UN", "VA",
-    "VE", "VI", "WEB", "WI", "Y", "YA", "YO",
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +54,7 @@ class Metodo2Teclado extends StatelessWidget {
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
                       ),
-                      itemCount: silabasPorLetra[letraSeleccionada]?.length ?? 0,
+                      itemCount: silabasPorLetra[letraSeleccionada]?.length ?? 0, // Usar silabasPorLetra desde constants.dart
                       itemBuilder: (context, index) {
                         final silaba = silabasPorLetra[letraSeleccionada]![index];
                         final esSilabaEspecial = silabasEspeciales.contains(silaba);
@@ -102,8 +64,11 @@ class Metodo2Teclado extends StatelessWidget {
                             'id': const Uuid().v4(),
                             'contenido': silaba,
                           },
+                          onDragStarted: () {
+                            onSilabaDragged(silaba); // Llamar al callback al arrastrar la sílaba
+                          },
                           onDragCompleted: () {
-                            onClosePressed(); // Llamar directamente al callback de cierre
+                            onClosePressed(); // Cerrar el teclado secundario
                           },
                           feedback: Material(
                             child: Container(
