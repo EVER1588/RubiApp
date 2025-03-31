@@ -72,37 +72,47 @@ class Metodo2Teclado extends StatelessWidget {
                             },
                             feedback: Material(
                               child: Container(
-                                width: screenWidth * 0.15,
-                                height: screenWidth * 0.15,
-                                color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                width: screenWidth * 0.15, // Ajusta el ancho
+                                height: (screenWidth * 0.15) / 1.2, // Mantiene la proporción 1.2 (ancho:alto)
+                                decoration: BoxDecoration(
+                                  color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                  borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                                ),
                                 child: Center(
                                   child: Text(
                                     silaba,
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: screenWidth * 0.04,
+                                      fontSize: screenWidth * 0.04, // Ajusta el tamaño del texto
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                             childWhenDragging: Opacity(
-                              opacity: 0.5,
+                              opacity: 0.8, // Ajusta la opacidad si lo deseas
                               child: Container(
-                                width: screenWidth * 0.15,
-                                height: screenWidth * 0.15,
-                                color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                width: screenWidth * 0.15, // Ajusta el ancho
+                                height: (screenWidth * 0.15) / 1.2, // Ajusta el alto para mantener la proporción (1.2 es el childAspectRatio)
+                                decoration: BoxDecoration(
+                                  color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                  borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                                ),
                                 child: Center(
                                   child: Text(
                                     silaba,
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: screenWidth * 0.04,
+                                      fontSize: screenWidth * 0.04, // Ajusta el tamaño del texto
                                     ),
                                   ),
                                 ),
                               ),
                             ),
+                            onDragCompleted: () {
+                              // Llama a la función para cerrar el teclado secundario
+                              onClosePressed();
+                            },
                             child: Container(
                               width: screenWidth * 0.15,
                               height: screenWidth * 0.15,
@@ -120,10 +130,6 @@ class Metodo2Teclado extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            onDragCompleted: () {
-                              // Llama a la función para cerrar el teclado secundario
-                              onClosePressed();
-                            },
                           ),
                         );
                       },
