@@ -34,47 +34,82 @@ class Metodo2Teclado extends StatelessWidget {
               children: [
                 // Fondo semi-transparente
                 Container(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withOpacity(0),
                 ),
 
                 // Contenido del teclado secundario
                 Center(
                   child: Container(
-                    width: screenWidth * 0.8,
-                    height: screenHeight * 0.4,
+                    width: screenWidth * 0.9, // Cambia este valor para ajustar el ancho del teclado
+                    height: screenHeight * 0.42, // Cambia este valor para ajustar el alto del teclado
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10), // Bordes redondeados del teclado
                     ),
                     child: GridView.builder(
                       padding: EdgeInsets.all(8),
-                      physics: NeverScrollableScrollPhysics(),
+                      physics: NeverScrollableScrollPhysics(), // Desactivar el scroll interno del GridView
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
+                        crossAxisCount: 6, // Número de columnas
+                        crossAxisSpacing: 8, // Espaciado horizontal entre bloques
+                        mainAxisSpacing: 8, // Espaciado vertical entre bloques
+                        childAspectRatio: 1.2, // Cambia este valor para ajustar la proporción (ancho:alto)
                       ),
-                      itemCount: silabasPorLetra[letraSeleccionada]?.length ?? 0, // Usar silabasPorLetra desde constants.dart
+                      itemCount: silabasPorLetra[letraSeleccionada]?.length ?? 0,
                       itemBuilder: (context, index) {
                         final silaba = silabasPorLetra[letraSeleccionada]![index];
                         final esSilabaEspecial = silabasEspeciales.contains(silaba);
 
-                        return Draggable<Map<String, String>>(
-                          data: {
-                            'id': const Uuid().v4(),
-                            'contenido': silaba,
+                        return GestureDetector(
+                          onTap: () {
+                            // Leer la sílaba al tocar el bloque
+                            flutterTts.speak(silaba);
                           },
-                          onDragStarted: () {
-                            onSilabaDragged(silaba); // Llamar al callback al arrastrar la sílaba
-                          },
-                          onDragCompleted: () {
-                            onClosePressed(); // Cerrar el teclado secundario
-                          },
-                          feedback: Material(
+                          child: Draggable<Map<String, String>>(
+                            data: {
+                              'id': const Uuid().v4(),
+                              'contenido': silaba,
+                            },
+                            feedback: Material(
+                              child: Container(
+                                width: screenWidth * 0.15,
+                                height: screenWidth * 0.15,
+                                color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                child: Center(
+                                  child: Text(
+                                    silaba,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: screenWidth * 0.04,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            childWhenDragging: Opacity(
+                              opacity: 0.5,
+                              child: Container(
+                                width: screenWidth * 0.15,
+                                height: screenWidth * 0.15,
+                                color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                child: Center(
+                                  child: Text(
+                                    silaba,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: screenWidth * 0.04,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                             child: Container(
                               width: screenWidth * 0.15,
                               height: screenWidth * 0.15,
-                              color: esSilabaEspecial ? Colors.green : Colors.blue,
+                              decoration: BoxDecoration(
+                                color: esSilabaEspecial ? Colors.green : Colors.blue,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                               child: Center(
                                 child: Text(
                                   silaba,
@@ -85,37 +120,10 @@ class Metodo2Teclado extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ),
-                          childWhenDragging: Opacity(
-                            opacity: 0.5,
-                            child: Container(
-                              width: screenWidth * 0.15,
-                              height: screenWidth * 0.15,
-                              color: esSilabaEspecial ? Colors.green : Colors.blue,
-                              child: Center(
-                                child: Text(
-                                  silaba,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: screenWidth * 0.04,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          child: Container(
-                            width: screenWidth * 0.15,
-                            height: screenWidth * 0.15,
-                            color: esSilabaEspecial ? Colors.green : Colors.blue,
-                            child: Center(
-                              child: Text(
-                                silaba,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: screenWidth * 0.04,
-                                ),
-                              ),
-                            ),
+                            onDragCompleted: () {
+                              // Llama a la función para cerrar el teclado secundario
+                              onClosePressed();
+                            },
                           ),
                         );
                       },

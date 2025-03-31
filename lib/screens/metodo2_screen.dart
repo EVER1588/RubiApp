@@ -266,8 +266,8 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       // Validar y asignar el color correspondiente
       if (palabrasValidas.contains(bloque)) {
         coloresBloques[bloque] = BlockColor.green; // Palabra válida
-      } else if (silabasEspeciales.contains(bloque)) {
-        coloresBloques[bloque] = BlockColor.orange; // Bloque especial
+      } else if (_esInicioDePalabra(bloque)) {
+        coloresBloques[bloque] = BlockColor.orange; // Bloque especial (naranja)
       } else if (_esSilabaDeLista(bloque)) {
         coloresBloques[bloque] = BlockColor.blue; // Bloque de una sola sílaba o sílaba válida
       } else {
@@ -276,7 +276,12 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
     }
   }
 
-  // Nueva función para verificar si un bloque está en silabasPorLetra
+  // Función para verificar si un bloque pertenece a iniciosDePalabras3Silabas o iniciosDePalabras4Silabas
+  bool _esInicioDePalabra(String bloque) {
+    return iniciosDePalabras3Silabas.contains(bloque) || iniciosDePalabras4Silabas.contains(bloque);
+  }
+
+  // Función para verificar si un bloque está en silabasPorLetra
   bool _esSilabaDeLista(String bloque) {
     for (var lista in silabasPorLetra.values) {
       if (lista.contains(bloque)) {
