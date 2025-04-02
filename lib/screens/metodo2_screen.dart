@@ -57,73 +57,102 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       ),
       body: Column(
         children: [
-          // Contenedor 1 (Azul) con restricciones
+          // Contenedor 1 (Azul) con restricciones y botón de PLAY
           Expanded(
-            flex: 1,
-            child: DragTarget<Map<String, dynamic>>(
-              onWillAccept: (data) {
-                // Solo aceptar bloques verdes (palabras válidas)
-                return data?['color'] == BlockColor.green;
-              },
-              onAccept: (data) {
-                setState(() {
-                  final bloque = data['contenido']!;
-                  // Agregar el bloque al contenedor 1
-                  bloquesContenedor1.add(bloque);
-                });
-              },
-              builder: (context, candidateData, rejectedData) {
-                return Container(
-                  width: screenWidth * 0.95,
-                  margin: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.05,
-                    vertical: screenHeight * 0.02,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(0, 0, 255, 0.3),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Wrap(
-                    spacing: 8.0,
-                    runSpacing: 4.0,
-                    children: bloquesContenedor1.map((bloque) {
-                      return Draggable<Map<String, dynamic>>(
-                        data: {
-                          'contenido': bloque,
-                          'color': BlockColor.green,
-                        },
-                        feedback: Material(
-                          color: Colors.transparent,
-                          child: Chip(
-                            label: Text(
-                              bloque,
-                              style: TextStyle(fontSize: 16, color: Colors.white),
+            flex: 1, // Mantener flex para distribuir espacio
+            child: Stack(
+              children: [
+                // Área de DragTarget
+                DragTarget<Map<String, dynamic>>(
+                  onWillAccept: (data) {
+                    // Solo aceptar bloques verdes (palabras válidas)
+                    return data?['color'] == BlockColor.green;
+                  },
+                  onAccept: (data) {
+                    setState(() {
+                      final bloque = data['contenido']!;
+                      // Agregar el bloque al contenedor 1
+                      bloquesContenedor1.add(bloque);
+                    });
+                  },
+                  builder: (context, candidateData, rejectedData) {
+                    return Container(
+                      width: screenWidth * 0.98,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.02,
+                        vertical: screenHeight * 0.01,
+                      ),
+                      constraints: BoxConstraints(
+                        minHeight: screenHeight * 0.2, // Alto mínimo del contenedor
+                      ),
+                      decoration: BoxDecoration(
+                        color: Color.fromRGBO(0, 0, 255, 0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Wrap(
+                        spacing: 8.0,
+                        runSpacing: 4.0,
+                        children: [
+                          // Botón de PLAY como el primer bloque
+                          Chip(
+                            label: GestureDetector(
+                              onTap: () async {
+                                // Concatenar todas las palabras del contenedor 1
+                                final texto = bloquesContenedor1.join(' ');
+                                if (texto.isNotEmpty) {
+                                  await flutterTts.speak(texto); // Reproducir el texto
+                                }
+                              },
+                              child: Icon(
+                                Icons.play_arrow, // Solo el ícono de reproducción
+                                color: Colors.white,
+                              ),
                             ),
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.green, // Color del botón
                           ),
-                        ),
-                        childWhenDragging: Opacity(
-                          opacity: 0.5,
-                          child: Chip(
-                            label: Text(
-                              bloque,
-                              style: TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                            backgroundColor: Colors.green,
-                          ),
-                        ),
-                        child: Chip(
-                          label: Text(
-                            bloque,
-                            style: TextStyle(fontSize: 16, color: Colors.white),
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
+
+                          // Bloques del contenedor 1
+                          ...bloquesContenedor1.map((bloque) {
+                            return Draggable<Map<String, dynamic>>(
+                              data: {
+                                'contenido': bloque,
+                                'color': BlockColor.green,
+                              },
+                              feedback: Material(
+                                color: Colors.transparent,
+                                child: Chip(
+                                  label: Text(
+                                    bloque,
+                                    style: TextStyle(fontSize: 16, color: Colors.white),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              ),
+                              childWhenDragging: Opacity(
+                                opacity: 0.5,
+                                child: Chip(
+                                  label: Text(
+                                    bloque,
+                                    style: TextStyle(fontSize: 16, color: Colors.white),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              ),
+                              child: Chip(
+                                label: Text(
+                                  bloque,
+                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
 
@@ -147,10 +176,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   },
                   builder: (context, candidateData, rejectedData) {
                     return Container(
-                      width: screenWidth * 0.95,
+                      width: screenWidth * 0.98,
                       margin: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.05,
-                        vertical: screenHeight * 0.02,
+                        horizontal: screenWidth * 0.02,
+                        vertical: screenHeight * 0.002,
                       ),
                       decoration: BoxDecoration(
                         color: Color.fromRGBO(0, 128, 0, 0.3),
