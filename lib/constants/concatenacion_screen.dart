@@ -5,7 +5,7 @@ import 'constants.dart';
 enum BlockColor {
   blue,   // Estado inicial
   green,  // Palabra completa
-  orange, // Inicio de palabra de 3 o 4 sílabas
+  orange, // Inicio de palabra
   red,    // Combinación inválida
 }
 
@@ -21,16 +21,16 @@ Map<String, dynamic> concatenarBloques(String bloque1, String bloque2) {
     };
   }
 
-  // Verifica si coincide con inicios de 3 sílabas
-  if (iniciosDePalabras3Silabas.contains(palabraFormada.toUpperCase())) {
+  // Verifica si coincide con 'silabasPorLetra'
+  if (_esSilabaDeLista(palabraFormada)) {
     return {
       'cadena': palabraFormada,
-      'color': BlockColor.orange,
+      'color': BlockColor.blue,
     };
   }
 
-  // Verifica si coincide con inicios de 4 sílabas
-  if (iniciosDePalabras4Silabas.contains(palabraFormada.toUpperCase())) {
+  // Verifica si coincide con 'IniciosDePalabras'
+  if (IniciosDePalabras.contains(palabraFormada.toUpperCase())) {
     return {
       'cadena': palabraFormada,
       'color': BlockColor.orange,
@@ -42,4 +42,14 @@ Map<String, dynamic> concatenarBloques(String bloque1, String bloque2) {
     'cadena': palabraFormada,
     'color': BlockColor.red,
   };
+}
+
+/// Función para verificar si una palabra está en 'silabasPorLetra'
+bool _esSilabaDeLista(String palabra) {
+  for (var lista in silabasPorLetra.values) {
+    if (lista.contains(palabra)) {
+      return true;
+    }
+  }
+  return false;
 }

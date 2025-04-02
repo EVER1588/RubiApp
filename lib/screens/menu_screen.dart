@@ -3,13 +3,18 @@ import 'metodo1_screen.dart';
 import 'metodo2_screen.dart';
 import 'metodo3_screen.dart';
 import 'configuracion_screen.dart';
-import '../widgets/custom_app_bar.dart';
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 
 class MenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Menú Principal'),
+      appBar: CustomBar(
+        title: 'Menú Principal',
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
+      ),
       body: Stack(
         children: [
           Center(

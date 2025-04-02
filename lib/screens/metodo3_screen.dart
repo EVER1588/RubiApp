@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_app_bar.dart';
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 
 class Metodo3Screen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Describe la Imagen'),
+      appBar: CustomBar(
+        title: 'Describe la Imagen',
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
+      ),
       body: Center(
         child: Text('Pantalla del Método 3'),
       ),

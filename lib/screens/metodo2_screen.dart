@@ -3,6 +3,7 @@ import 'metodo2teclado_screen.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../constants/concatenacion_screen.dart'; // Importa el archivo donde está definida la función
 import '../constants/constants.dart'; // Importar las funciones globales
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -17,6 +18,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   
   // Lista de bloques del contenedor 2
   List<String> bloquesContenedor2 = [];
+  List<String> bloquesContenedor1 = [];
 
   // Mapa para almacenar los colores de los bloques
   Map<String, BlockColor> coloresBloques = {};
@@ -47,30 +49,81 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Método 2'),
+      appBar: CustomBar(
+        title: 'Método 2',
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
       ),
       body: Column(
         children: [
-          // Contenedor 1 (Azul)
+          // Contenedor 1 (Azul) con restricciones
           Expanded(
             flex: 1,
-            child: Container(
-              width: screenWidth * 0.95,
-              margin: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.05,
-                vertical: screenHeight * 0.02,
-              ),
-              decoration: BoxDecoration(
-                color: Color.fromRGBO(0, 0, 255, 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  'Contenedor 1',
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
-                ),
-              ),
+            child: DragTarget<Map<String, dynamic>>(
+              onWillAccept: (data) {
+                // Solo aceptar bloques verdes (palabras válidas)
+                return data?['color'] == BlockColor.green;
+              },
+              onAccept: (data) {
+                setState(() {
+                  final bloque = data['contenido']!;
+                  // Agregar el bloque al contenedor 1
+                  bloquesContenedor1.add(bloque);
+                });
+              },
+              builder: (context, candidateData, rejectedData) {
+                return Container(
+                  width: screenWidth * 0.95,
+                  margin: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.05,
+                    vertical: screenHeight * 0.02,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Color.fromRGBO(0, 0, 255, 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: bloquesContenedor1.map((bloque) {
+                      return Draggable<Map<String, dynamic>>(
+                        data: {
+                          'contenido': bloque,
+                          'color': BlockColor.green,
+                        },
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: Chip(
+                            label: Text(
+                              bloque,
+                              style: TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        ),
+                        childWhenDragging: Opacity(
+                          opacity: 0.5,
+                          child: Chip(
+                            label: Text(
+                              bloque,
+                              style: TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        ),
+                        child: Chip(
+                          label: Text(
+                            bloque,
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -185,7 +238,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
 
                 // Botón de borrar en la esquina inferior derecha
                 Positioned(
-                  bottom: 18, // Ajusta la posición vertical
+                  bottom: 25, // Ajusta la posición vertical
                   right: 29,  // Ajusta la posición horizontal
                   child: DragTarget<Map<String, dynamic>>(
                     onWillAccept: (data) => true,
@@ -266,19 +319,14 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       // Validar y asignar el color correspondiente
       if (palabrasValidas.contains(bloque)) {
         coloresBloques[bloque] = BlockColor.green; // Palabra válida
-      } else if (_esInicioDePalabra(bloque)) {
-        coloresBloques[bloque] = BlockColor.orange; // Bloque especial (naranja)
       } else if (_esSilabaDeLista(bloque)) {
         coloresBloques[bloque] = BlockColor.blue; // Bloque de una sola sílaba o sílaba válida
+      } else if (IniciosDePalabras.contains(bloque)) {
+        coloresBloques[bloque] = BlockColor.orange; // Inicio de palabra válido
       } else {
         coloresBloques[bloque] = BlockColor.red; // Bloque inválido
       }
     }
-  }
-
-  // Función para verificar si un bloque pertenece a iniciosDePalabras3Silabas o iniciosDePalabras4Silabas
-  bool _esInicioDePalabra(String bloque) {
-    return iniciosDePalabras3Silabas.contains(bloque) || iniciosDePalabras4Silabas.contains(bloque);
   }
 
   // Función para verificar si un bloque está en silabasPorLetra

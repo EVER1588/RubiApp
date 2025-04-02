@@ -55,7 +55,12 @@ const List<String> palabrasValidas = [
 "TORTA", "TORTAS", "TRABAJO", "TRABAJOS", "TRATAR", "TRAVES", "TRAVESÍA", "TREN", "TRENES", "TRIÁNGULO", "TRIÁNGULOS", 
 "TROMPO", "TROMPOS", "TUBO", "TUBOS", "UNO", "VASO", "VASOS", "VECES", "VEGETAL", "VEGETALES", "VER", "VERANO", 
 "VERANOS", "VERBO", "VERBOS", "VERDE", "VERDES", "VIENTO", "VIENTOS", "VIEJO", "VIEJA", "VIEJOS", "VIEJAS", 
-"VOLVER", "ZAPATO", "ZAPATOS"
+"VOLVER", "ZAPATO", "ZAPATOS", "MUÑECA", "MUÑECAS", "MUÑECO", "MUÑECOS",
+"VENTANA", "VENTANAS", "VESTIDO", "VESTIDOS",
+"A", "AL", "CON", "DA", "DAN", "DON", "DAR", "DE", "EL", "EN", "ES", "FE", "HA", "HE", "LA",
+"LE", "LO", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
+"NO", "QUE", "QUI", "SE", "SI", "SU", "SIN", "TE", "TU", "UN", "VA", "VAN"
+"VE", "VEN", "VER", "VI", "WEB", "WI", "Y", "YA", "YO",
   ];
 
 const List<String> silabasEspeciales = [
@@ -65,35 +70,21 @@ const List<String> silabasEspeciales = [
   "VE", "VEN", "VER", "VI", "WEB", "WI", "Y", "YA", "YO",
 ];
 
-final List<String> iniciosDePalabras3Silabas = [
-  'CELU', 'CARGA', 'MANZA', 'CAMI', 'VENTA', 'ESCUE', 'MONTA',
-  'AMI', 'ABRA', 'ABRI', 'ÁGUI', 'ANI', 'ARBO', 'ARBUS', "HUMA",
-  'ARDI', 'ARE', 'ARMA', 'ASIEN', 'AURO', 'AZÚ', 'AZU', 
-  'BALLE', 'BOSTE', 'BOTO', 'BUFAN', 'CABA', 'CALIEN', 'CAME', 
-  'CAMI', 'CANDA', 'CARA', 'CARTO', 'CELES', 'CERCA', 'COCI', 
-  'COLCHO', 'COLI', 'COLO', 'COLUM', 'COME', 'COMIEN', 'COMPLE', 
-  'CONE', 'CORBA', 'CORTI', 'CUADRA', 'CUCHA', 'CUCHI', 'DEBA', 
-  'DESIER', 'DESOR', 'DIBU', 'DIFÍ', 'DURAN', 'ECLIP', 'EMPU', 
-  'ENTRA', 'ENTRAN', 'EQUI', 'ERI', 'ERRO', 'ESCA', 'ESCON', 
-  'ESCRI', 'ESCU', 'ESFE', 'ESPA', 'ESPI', 'ESTRE', 'FELI', 
-  'FLAMEN', 'GALA', 'GARA', 'GIRAN', 'GORI', 'HORMI', 'IGLE', 
-  'JABA', 'JARDI', 'LÁMPA', 'LEJA', 'LENTE', 'PANTU', 'RODRI', 
-  'ESTU', 'FAMI', "COMI", "PELU", "SUFI", "VELO",  
-  'ENCUE', 'ENCI', 'ENCON', 'ENFA', "AGRE",
-];
-
-final List<String> iniciosDePalabras4Silabas = [
-  'CHOCOLA', 'BIBLIOTE', 'FAMILI', 'MARIPO', 'AUTOMO', 'IMPRESO', 
-  'ALMOHA', 'AMARI', 'ANIMA', 'ARCOÍ', 'BICICLE', 'CALENDA', 'CAMIO', 
-  'CARRETE', 'COMPAÑE', 'DESAYU', 'DIFICUL', 'DORMITO', 'ELEFAN', 'ESCALE', 
-  'ESCALAN', 'ESCALO', 'ESCONDI', 'ESCRITO', 'ESMERAL', "VACACIO",
-  'ENAMO', "SUFICIEN", "VELOCI",
+const List<String> IniciosDePalabras = [
+  // Combina los valores de iniciosDePalabras3Silabas e iniciosDePalabras4Silabas
+"ABA", "ABANI", "ABRA", "ABRI", "AGRE", "AGREGA", "AGU", "ÁGUI", "AHO", "ALMO", 
+"ALMOHA", "AMARI", "ANI","ARBUS", "ARDI", "ARE", "ARCO", "ARCOÍ", "ARMA", 
+"ARRI", "ASIEN", "AZU", "AZÚ", "BALLE", "BICICLE", "BOTO", "BOSTE","BUFAN", 
+"CABA", "CALEN", "CALENDA", "CALI", "CALIEN", "CAMI","CAMIO", "CANAS", 
+"CANDA","CARA", "CARACO", "CARRE", "CARRETE", "CARRO", "CARTO", "CELES", 
+"COCI", "COLCHO", "COLO", "COME", "COMI", "CONTRO", "CORBA", "CORDI", 
+"CORDILLE", "CORTI", "CUADRA",
 ];
 
 const Map<String, List<String>> silabasPorLetra = {
   "A": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
   "B": ["B", "BA", "BE", "BI", "BO", "BU", "BAN", "BEN", "BIN", "BON", "BUN", "BLA", "BLE", "BLI", "BLO", "BLU", "BRA", "BRE", "BRI", "BRO", "BRU", "BRAN", "BREN", "BRIN", "BRON", "BRUN"],
-  "C": ["CA", "CE", "CI", "CO", "CU", "CAN", "CEN", "CIN", "CON", "CUN", "CAl", "CEl", "CIl", "COl", "CUl", "CLA", "CLE", "CLI", "CLO", "CLU",
+  "C": ["CA", "CE", "CI", "CO", "CU", "CAS", "CES", "CIS", "COS", "CUS", "CAN", "CEN", "CIN", "CON", "CUN", "CAl", "CEl", "CIl", "COl", "CUl", "CLA", "CLE", "CLI", "CLO", "CLU",
         "CRA", "CRE", "CRI", "CRO", "CRU", "CIAS", "CAR", "CER", "CIR", "COR", "CUR", "CHA", "CHE", "CHI", "CHO", "CHU",],
   "D": ["D", "DA", "DE", "DI", "DO", "DU", "DAN", "DEN", "DIN", "DON", "DUN", "DAR", "DER", "DIR", "DOR", "DUR",],
   "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
@@ -101,7 +92,7 @@ const Map<String, List<String>> silabasPorLetra = {
   "G": ["G", "GA", "GE", "GI", "GO", "GU", "GUA", "GEN", "GUA", "GUE", "GUI", "GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
   "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HU"],
   "I": ["Í", "I", "IS", "IN", "IR", "IM"],
-  "J": ["J", "JA", "JE", "JI", "JO", "JU"],
+  "J": ["J", "JA", "JE", "JI", "JO", "JU", "JAS", "JES", "JIS", "JOS", "JUS"],
   "K": ["K", "KA", "KE", "KI", "KO", "KU"],
   "L": ["L", "LA", "LE", "LI", "LO", "LU", "LAS", "LOS", "LUZ", "LLA", "LLE", "LLI", "LLO", "LLU"],
   "M": ["M", "MA", "ME", "MI", "MO", "MU", "MAS", "MES", "MIS", "MOS"],

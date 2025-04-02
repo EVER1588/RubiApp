@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/constants.dart'; // Importar las funciones globales
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 
 class Metodo1Screen extends StatefulWidget {
   @override
@@ -139,14 +140,11 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Formar Sílabas'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+      appBar: CustomBar(
+        title: 'Formar Sílabas',
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
       ),
       body: Column(
         children: [

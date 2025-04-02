@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'menu_screen.dart';
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 
 class BienvenidaScreen extends StatelessWidget {
   final double screenWidth;
@@ -10,32 +11,15 @@ class BienvenidaScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange[100],
+      appBar: CustomBar(
+        title: 'Bienvenida',
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            // Barra de navegación
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back, color: Colors.deepPurple),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.more_vert, color: Colors.deepPurple),
-                    onPressed: () {
-                      _showOptionsDialog(context);
-                    },
-                  ),
-                ],
-              ),
-            ),
             // Contenido principal
             Expanded(
               child: Center(
