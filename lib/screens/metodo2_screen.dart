@@ -172,6 +172,9 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                       // Agregar el bloque al contenedor 2 con su color correspondiente
                       bloquesContenedor2.add(bloque);
                       coloresBloques[bloque] = color;
+
+                      // Validar los bloques restantes inmediatamente
+                      _validarBloquesRestantes();
                     });
                   },
                   builder: (context, candidateData, rejectedData) {
@@ -321,6 +324,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               },
               onSilabaDragged: (silaba) {
                 decirTexto(silaba); // Leer la sílaba arrastrada
+                setState(() {
+                  bloquesContenedor2.add(silaba); // Agregar la sílaba al contenedor 2
+                  _validarBloquesRestantes(); // Validar los bloques restantes inmediatamente
+                });
               },
             ),
           ),
@@ -345,12 +352,12 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
 
   void _validarBloquesRestantes() {
     for (var bloque in bloquesContenedor2) {
-      // Validar y asignar el color correspondiente
-      if (palabrasValidas.contains(bloque)) {
+      final bloqueLimpio = bloque.trim().toUpperCase(); // Asegurar formato consistente
+      if (palabrasValidas.contains(bloqueLimpio)) {
         coloresBloques[bloque] = BlockColor.green; // Palabra válida
-      } else if (_esSilabaDeLista(bloque)) {
-        coloresBloques[bloque] = BlockColor.blue; // Bloque de una sola sílaba o sílaba válida
-      } else if (IniciosDePalabras.contains(bloque)) {
+      } else if (_esSilabaDeLista(bloqueLimpio)) {
+        coloresBloques[bloque] = BlockColor.blue; // Sílaba válida
+      } else if (IniciosDePalabras.contains(bloqueLimpio)) {
         coloresBloques[bloque] = BlockColor.orange; // Inicio de palabra válido
       } else {
         coloresBloques[bloque] = BlockColor.red; // Bloque inválido

@@ -3,6 +3,10 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 const List<String> palabrasValidas = [
+"A", "AL", "CON", "DA", "DAN", "DON", "DAR", "DE", "EL", "EN", "ES", "FE", "HA", "HE", "LA",
+"LE", "LO", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
+"NO", "QUE", "QUI", "SE", "SI", "SU", "SIN", "TE", "TU", "UN", "VA", "VAN", "VES",
+"VE", "VEN", "VER", "VI", "WEB", "WI", "Y", "YA", "YO",
 "ABAJO", "ABANICO", "ABRAZAR", "ABRIGO", "ABRIGOS", "ABRIR", "AGREGADO", "AGREGAN", "AGREGAR", "AGUA", "AGUJA", "AGUJAS", 
 "ÁGUILA", "ÁGUILAS", "AHORA", "ALGO", "ALLÁ", "ALMOHADA", "ALMOHADAS", "ALTO", "ALTOS", "AMARILLO", "AMARILLOS", 
 "AMIGA", "AMIGAS", "AMIGO", "AMIGOS", "AMO", "AMOR", "ANDAR", "ANIMAL", "ANIMALES", "ANTES", "AQUÍ", "ARBOL", "ÁRBOL", 
@@ -16,7 +20,7 @@ const List<String> palabrasValidas = [
 "CAMA", "CAMIÓN", "CAMIONES", "CAMPO", "CAMPOS", "CANASTA", "CANDADO", "CANDADOS", "CANTA", "CANTAR", "CAOS", 
 "CARACOL", "CARACOLES", "CARNE", "CARNES", "CARRETERA", "CARRO", "CARROS", "CARTÓN", "CARTONES", "CASA", "CASAS", 
 "CASCO", "CASCOS", "CELESTE", "CELESTES", "CENTRO", "CERCA", "CERCANO", "CERCANOS", "CERDO", "CERDOS", "CERRAR", 
-"CHICA", "CHICAS", "CHICO", "CHICOS", "CIEN", "CIENCIA", "CIENCIAS", "CLARO", "CLAROS", "COCINA", "COCO", "COLA", 
+"CHICA", "CHICAS", "CHICO", "CHICOS", "CIEN", "CIENCIA", "CIENCIAS", "CLIP", "CLARO", "CLAROS", "COCINA", "COCO", "COLA", 
 "COLCHÓN", "COLCHONES", "COLORES", "COLOR", "COMEDOR", "COME", "COMER", "COMIDA", "COMO", "COMPÁS", "COMPRAR", 
 "COMPRA", "CONO", "CONOS", "CONTAR", "CONTROL", "CONTROLES", "CORBATAS", "CORBATA", "CORDILLERA", "CORDILLERAS", 
 "CORTINA", "CORTINAS", "CREER", "CUADRADO", "CUADRADOS", "CUARTO", "CUARTOS", "CUCHARA", "CUCHARAS", "CUCHILLO", 
@@ -37,7 +41,7 @@ const List<String> palabrasValidas = [
 "HUELLA", "HUELLAS", "IDEA", "IDEAS", "IGLESIA", "IGLESIAS", "IGUAL", "ISLA", "ISLAS", "IRSE", "JABALÍ", "JABALÍES", 
 "JARDÍN", "JARDINES", "JUGAR", "JUGUETE", "JUGUETES", "LAGO", "LAGOS", "LÁMPARA", "LÁMPARAS", "LANZAR", "LECHE", 
 "LEER", "LEJANA", "LEJANAS", "LEJANO", "LEJANOS", "LEJOS", "LENTEJA", "LENTEJAS", "LENTO", "LIBRO", "LIBROS", 
-"LIMPIEZA", "LIMPIO", "LLAVE", "LLAVES", "LOBO", "LOBOS", "LUZ", "LUCES", "LUGAR", "MAGIA", "MASA", "MASAS", 
+"LIMPIEZA", "LIMPIO", "LLAVE", "LLAVES", "LOBO", "LOBOS", "LUZ", "LUCES", "LUGAR", "MAGIA", "MAMÁ", "MASA", "MASAS", 
 "MESEDORA", "MESA", "MESAS", "MIEL", "MIL", "MOMENTO", "MONTAÑA", "MONTAÑAS", "MUCHO", "MUCHOS", "MUEBLE", "MUEBLES", 
 "NADA", "NARANJA", "NEGRO", "NINGUN", "NOCHE", "NOVENO", "NUEVE", "NUNCA", "OCHO", "ONCE", "OSCURO", "OTROS", 
 "PALABRA", "PALABRAS", "PALO", "PALOS", "PANTALLA", "PANTALLAS", "PANTALÓN", "PANTALONES", "PAPA", "PAPÁ", "PAPEL", 
@@ -56,11 +60,13 @@ const List<String> palabrasValidas = [
 "TROMPO", "TROMPOS", "TUBO", "TUBOS", "UNO", "VASO", "VASOS", "VECES", "VEGETAL", "VEGETALES", "VER", "VERANO", 
 "VERANOS", "VERBO", "VERBOS", "VERDE", "VERDES", "VIENTO", "VIENTOS", "VIEJO", "VIEJA", "VIEJOS", "VIEJAS", 
 "VOLVER", "ZAPATO", "ZAPATOS", "MUÑECA", "MUÑECAS", "MUÑECO", "MUÑECOS",
-"VENTANA", "VENTANAS", "VESTIDO", "VESTIDOS",
-"A", "AL", "CON", "DA", "DAN", "DON", "DAR", "DE", "EL", "EN", "ES", "FE", "HA", "HE", "LA",
-"LE", "LO", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
-"NO", "QUE", "QUI", "SE", "SI", "SU", "SIN", "TE", "TU", "UN", "VA", "VAN", "VES",
-"VE", "VEN", "VER", "VI", "WEB", "WI", "Y", "YA", "YO",
+"VENTANA", "VENTANAS", "VESTIDO", "VESTIDOS", "PLATA", "PLANTAS", "CEPILLO", "CEPILLOS", "CONEJO", "CONEJOS",
+"PERICO", "PERICOS", "BOMBILLO", "BOMBILLOS", "CONEJITO", "METRO", "METROS", 
+"KILÓMETRO", "QUIERO", "QUIERE", "QUIERES", "QUIEREN", "MURO", "PILA", "BATERIA", "BATERIAS", 
+"RUEDA", "RUEDAS", "BRILLANTE", "BRILLANTES", "BRILLAR", "BRILLO", "BRILLITOS", "CANDELA", "CANDELAS", 
+"ACOSTAR", "ACOSTADO", "ACOSTADA", "DORIR", "DORMIDO", "DORMIDA", "DURMINENDO", "PEINA", "PEINADO", "PEINADOS", 
+"PEINANDO", "PEINANDOSE", 
+
   ];
 
 const List<String> silabasEspeciales = [
@@ -91,20 +97,22 @@ const List<String> IniciosDePalabras = [
 "PUPI", "RAPI", "RECI", "REDON", "REMO", "REMOLI", "RENGLO", "REVIS", "SALU", "SANDA", 
 "SANDALI", "SEGU", "SEGUN", "SEMI", "SEPTI", "SÍLA", "SIMPA", "SIMPATI", "SORPRE", 
 "SORPREN", "SUFI", "SUFI", "SUFICI", "SUFICIEN", "SUSU", "TABLE", "TIJE", "TORNI", 
-"TRABA", "TRAVE", "TRSBECI", "TRIÁN", "TRIÁNGU", "VEGE", "VEGETAL", "VERA", "ZAPA", 
-"MUÑE", "VENTA", "VESTI",
+"TRABA", "TRAVE", "TRSBECI", "TRIÁN", "TRIÁNGU", "VEGE", "VETEGA", "VEGETAL", "VERA", 
+"ZAPA", "MUÑE", "VENTA", "VESTI",
+"CEPI", "CONE", "PERI", "BOMBI", "CONEGI", "KILÓ", "KILÓME", "QUIE", "BATE", "BATERI",
+"RUE", "BRILLAN", "BRILLI", "CANDE", "ACOS", "ACOSTA", "DORMI", "DURMIEN", "PEINAN", 
 ];
 
 const Map<String, List<String>> silabasPorLetra = {
   "A": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
   "B": ["B", "BA", "BE", "BI", "BO", "BU", "BAN", "BEN", "BIN", "BON", "BUN", "BLA", "BLE", "BLI", "BLO", "BLU", "BRA", "BRE", "BRI", "BRO", "BRU", "BRAN", "BREN", "BRIN", "BRON", "BRUN"],
-  "C": ["CA", "CE", "CI", "CO", "CU", "CAS", "CES", "CIS", "COS", "CUS", "CAN", "CEN", "CIN", "CON", "CUN", "CAl", "CEl", "CIl", "COl", "CUl", "CLA", "CLE", "CLI", "CLO", "CLU",
+  "C": ["CA", "CE", "CI", "CO", "CU", "CAS", "CES", "CIS", "COS", "CUS", "CAN", "CEN", "CIN", "CON", "CUN", "CAl", "CEl", "CIl", "COl", "CUl", "CLA", "CLE", "CLI", "CLIP", "CLO", "CLU",
         "CRA", "CRE", "CRI", "CRO", "CRU", "CIAS", "CAR", "CER", "CIR", "COR", "CUR", "CHA", "CHE", "CHI", "CHO", "CHU",],
   "D": ["D", "DA", "DE", "DI", "DO", "DU", "DAN", "DEN", "DIN", "DON", "DUN", "DAR", "DER", "DIR", "DOR", "DUR",],
   "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
-  "F": ["F", "FA", "FE", "FI", "FIES.", "FO", "FU", "FAL", "FEL", "FIL", "FOL", "FUL", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
+  "F": ["F", "FA", "FE", "FI", "FIES", "FO", "FU", "FAL", "FEL", "FIL", "FOL", "FUL", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
   "G": ["G", "GA", "GE", "GI", "GO", "GU", "GUA", "GEN", "GUA", "GUE", "GUI", "GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
-  "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HU"],
+  "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HOR", "HU"],
   "I": ["Í", "I", "IS", "IN", "IR", "IM"],
   "J": ["J", "JA", "JE", "JI", "JO", "JU", "JAS", "JES", "JIS", "JOS", "JUS"],
   "K": ["K", "KA", "KE", "KI", "KO", "KU"],
