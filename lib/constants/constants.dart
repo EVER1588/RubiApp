@@ -72,13 +72,27 @@ const List<String> silabasEspeciales = [
 
 const List<String> IniciosDePalabras = [
   // Combina los valores de iniciosDePalabras3Silabas e iniciosDePalabras4Silabas
-"ABA", "ABANI", "ABRA", "ABRI", "AGRE", "AGREGA", "AGU", "ÁGUI", "AHO", "ALMO", 
-"ALMOHA", "AMARI", "ANI","ARBUS", "ARDI", "ARE", "ARCO", "ARCOÍ", "ARMA", 
-"ARRI", "ASIEN", "AZU", "AZÚ", "BALLE", "BICICLE", "BOTO", "BOSTE","BUFAN", 
-"CABA", "CALEN", "CALENDA", "CALI", "CALIEN", "CAMI","CAMIO", "CANAS", 
-"CANDA","CARA", "CARACO", "CARRE", "CARRETE", "CARRO", "CARTO", "CELES", 
-"COCI", "COLCHO", "COLO", "COME", "COMI", "CONTRO", "CORBA", "CORDI", 
-"CORDILLE", "CORTI", "CUADRA",
+"ABA", "ABRA", "ABRI", "AGRE", "AGREGA", "AGU", "ÁGUI", "AHO", "ALMO", "ALMOHA", 
+"AMARI", "ANI","ARBUS", "ARDI", "ARE", "ARCO", "ARCOÍ", "ARMA", "ARRI", "ASIEN", 
+"AZU", "AZÚ", "BALLE", "BICICLE", "BOTO", "BOSTE", "BUFAN", "CABA", "CALEN", 
+"CALENDA", "CALI", "CALIEN", "CAMI", "CAMIO", "CANAS", "CANDA", "CARA", "CARACO", 
+"CARRE", "CARRETE", "CARRO", "CARTO", "CELES", "COCI", "COLCHO", "COLO", "COME", 
+"COMI", "CONTRO", "CORBA", "CORDI", "CORDILLE", "CORTI", "CUA", "CUADRA", "CUCHA", 
+"CUCHI", "DELFINES",  "DESA", "DESAYU", "DESI", "DESIER", "DESTE", "DIBU", "DIFÍ", 
+"DIFICUL", "DORMI", "DORMITO", "DORMITO", "ECLIP", "ELE", "ELEFAN", "EMPU", "ENCEN", 
+"ENCI", "ENCON", "ENCONTRA", "ENCUEN", "ENER", "ENFA", "ENOR", "ERI", "ERRO", "ESCA", 
+"ESCA", "ESCALE", "ESCALO", "ESCON", "ESCONDI", "ESCRI", "ESCRITO", "ESCU", "ESFE", 
+"ESME", "ESMERAL", "ESPA", "ESPI", "ESTRE", "ESTU", "EXA", "EXÁME", "FAMI", "FAMILI", 
+"FELI", "FELICE",  "FLAME", "FLAMEN", "GALA", "GALAXI", "GARA", "GIRA", "GIRAN", 
+"GORI", "GORILAS", "GORRA", "GORRAS", "HUMA", "HOGA", "HORMI", "IGLE", "IGLESI", 
+"JABA", "JARDI", "JUGUE", "LÁMPA", "LEJA", "LENTE", "LIMPI", "LIMPIE", "MESE", "MESEDO", 
+"MOME", "MOMEN", "MONTA", "MUE", "NARA", "NARAN", "NOVE", "OSCU", "PANTA", "PANTALO",
+"PAPE", "PARE", "PERSO", "PEQUE", "PINCE", "PINTU", "PLANE", "POE", "PROFE", "PROFESO",
+"PUPI", "RAPI", "RECI", "REDON", "REMO", "REMOLI", "RENGLO", "REVIS", "SALU", "SANDA", 
+"SANDALI", "SEGU", "SEGUN", "SEMI", "SEPTI", "SÍLA", "SIMPA", "SIMPATI", "SORPRE", 
+"SORPREN", "SUFI", "SUFI", "SUFICI", "SUFICIEN", "SUSU", "TABLE", "TIJE", "TORNI", 
+"TRABA", "TRAVE", "TRSBECI", "TRIÁN", "TRIÁNGU", "VEGE", "VEGETAL", "VERA", "ZAPA", 
+"MUÑE", "VENTA", "VESTI",
 ];
 
 const Map<String, List<String>> silabasPorLetra = {
@@ -88,7 +102,7 @@ const Map<String, List<String>> silabasPorLetra = {
         "CRA", "CRE", "CRI", "CRO", "CRU", "CIAS", "CAR", "CER", "CIR", "COR", "CUR", "CHA", "CHE", "CHI", "CHO", "CHU",],
   "D": ["D", "DA", "DE", "DI", "DO", "DU", "DAN", "DEN", "DIN", "DON", "DUN", "DAR", "DER", "DIR", "DOR", "DUR",],
   "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
-  "F": ["F", "FA", "FE", "FI", "FIES", "FO", "FU", "FAL", "FEL", "FIL", "FOL", "FUL", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
+  "F": ["F", "FA", "FE", "FI", "FIES.", "FO", "FU", "FAL", "FEL", "FIL", "FOL", "FUL", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
   "G": ["G", "GA", "GE", "GI", "GO", "GU", "GUA", "GEN", "GUA", "GUE", "GUI", "GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
   "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HU"],
   "I": ["Í", "I", "IS", "IN", "IR", "IM"],
