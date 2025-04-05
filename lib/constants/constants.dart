@@ -135,6 +135,144 @@ const Map<String, List<String>> silabasPorLetra = {
   "Z": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU"],
 };
 
+const Map<String, Map<String, List<String>>> silabasClasificadas = {
+  "A": {
+    "comunes": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "B": {
+    "comunes": ["B", "BA", "BE", "BI", "BO", "BU"],
+    "trabadas": ["BLA", "BLE", "BLI", "BLO", "BLU", "BRA", "BRE", "BRI", "BRO", "BRU"],
+    "mixtas": ["BAL", "BEL", "BIL", "BOL", "BUL"],
+  },
+  "C": {
+    "comunes": ["CA", "CE", "CI", "CO", "CU"],
+    "trabadas": ["CLA", "CLE", "CLI", "CLO", "CLU", "CRA", "CRE", "CRI", "CRO", "CRU"],
+    "mixtas": ["CAL", "CEL", "CIL", "COL", "CUL"],
+  },
+  "D": {
+    "comunes": ["D", "DA", "DE", "DI", "DO", "DU"],
+    "trabadas": [],
+    "mixtas": ["DAL", "DEL", "DIL", "DOL", "DUL"],
+  },
+  "E": {
+    "comunes": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "F": {
+    "comunes": ["F", "FA", "FE", "FI", "FO", "FU"],
+    "trabadas": ["FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
+    "mixtas": ["FAL", "FEL", "FIL", "FOL", "FUL"],
+  },
+  "G": {
+    "comunes": ["G", "GA", "GE", "GI", "GO", "GU"],
+    "trabadas": ["GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
+    "mixtas": ["GAL", "GEL", "GIL", "GOL", "GUL"],
+  },
+  "H": {
+    "comunes": ["H", "HA", "HE", "HI", "HO", "HU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "I": {
+    "comunes": ["Í", "I", "IS", "IN", "IR", "IM"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "J": {
+    "comunes": ["J", "JA", "JE", "JI", "JO", "JU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "K": {
+    "comunes": ["K", "KA", "KE", "KI", "KO", "KU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "L": {
+    "comunes": ["L", "LA", "LE", "LI", "LO", "LU"],
+    "trabadas": ["LLA", "LLE", "LLI", "LLO", "LLU"],
+    "mixtas": [],
+  },
+  "M": {
+    "comunes": ["M", "MA", "ME", "MI", "MO", "MU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "N": {
+    "comunes": ["N", "NA", "NE", "NI", "NO", "NU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "Ñ": {
+    "comunes": ["Ñ", "ÑA", "ÑE", "ÑI", "ÑO", "ÑU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "O": {
+    "comunes": ["Ó", "O", "OS", "ON"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "P": {
+    "comunes": ["P", "PA", "PE", "PI", "PO", "PU"],
+    "trabadas": ["PLA", "PLE", "PLI", "PLO", "PLU", "PRA", "PRE", "PRI", "PRO", "PRU"],
+    "mixtas": ["PAL", "PEL", "PIL", "POL", "PUL"],
+  },
+  "Q": {
+    "comunes": ["Q", "QUE", "QUI"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "R": {
+    "comunes": ["R", "RA", "RE", "RI", "RO", "RU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "S": {
+    "comunes": ["S", "SA", "SE", "SI", "SO", "SU"],
+    "trabadas": ["SLA", "SLE", "SLI", "SLO", "SLU"],
+    "mixtas": [],
+  },
+  "T": {
+    "comunes": ["T", "TA", "TE", "TI", "TO", "TU"],
+    "trabadas": ["TRA", "TRE", "TRI", "TRO", "TRU"],
+    "mixtas": [],
+  },
+  "U": {
+    "comunes": ["Ú", "U", "UN", "UR", "US"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "V": {
+    "comunes": ["V", "VA", "VE", "VI", "VO", "VU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "W": {
+    "comunes": ["W", "WEB", "WI"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "X": {
+    "comunes": ["X", "XA", "XE", "XI"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "Y": {
+    "comunes": ["Y", "YA", "YO"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+  "Z": {
+    "comunes": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU"],
+    "trabadas": [],
+    "mixtas": [],
+  },
+};
+
 const double blockWidth = 60.0;
 const double blockHeight = 40.0;
 const double blockSpacing = 8.0;

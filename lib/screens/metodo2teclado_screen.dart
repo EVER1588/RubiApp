@@ -1,7 +1,6 @@
 // lib/screens/metodo2teclado_screen.dart
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import '../constants/constants.dart'; // Importar las funciones globales y silabasPorLetra
+import '../constants/constants.dart'; // Importar las funciones globales y silabasClasificadas
 
 class Metodo2Teclado extends StatefulWidget {
   final Function(String) onLetterPressed;
@@ -22,33 +21,22 @@ class Metodo2Teclado extends StatefulWidget {
 }
 
 class _Metodo2TecladoState extends State<Metodo2Teclado> {
-  String _categoriaSeleccionada = "Directas"; // Categoría seleccionada por defecto
-  List<String> _silabasDirectas = [];
-  List<String> _silabasMixtas = [];
+  String _categoriaSeleccionada = "comunes"; // Categoría seleccionada por defecto
+  List<String> _silabasActuales = []; // Lista de sílabas actuales
 
   @override
   void didUpdateWidget(Metodo2Teclado oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Restablecer la categoría solo si el teclado secundario se abre
-    if (oldWidget.letraSeleccionada.isEmpty && widget.letraSeleccionada.isNotEmpty) {
-      _categoriaSeleccionada = "Directas"; // Restablecer la categoría a "Directas"
-      _actualizarSilabas(widget.letraSeleccionada);
+    // Actualizar las sílabas cuando se selecciona una letra
+    if (oldWidget.letraSeleccionada != widget.letraSeleccionada) {
+      _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
     }
   }
 
-  void _actualizarSilabas(String letra) {
-    // Obtener las sílabas correspondientes a la letra seleccionada
-    final todasLasSilabas = silabasPorLetra[letra.toUpperCase()] ?? [];
-
-    // Dividir las sílabas en directas y mixtas
+  void _actualizarSilabas(String letra, String categoria) {
     setState(() {
-      _silabasDirectas = todasLasSilabas
-          .where((silaba) => silaba.length <= 2) // Ejemplo: sílabas directas (1-2 caracteres)
-          .toList();
-      _silabasMixtas = todasLasSilabas
-          .where((silaba) => silaba.length > 2) // Ejemplo: sílabas mixtas (3+ caracteres)
-          .toList();
+      _silabasActuales = silabasClasificadas[letra.toUpperCase()]?[categoria] ?? [];
     });
   }
 
@@ -56,11 +44,6 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // Seleccionar la lista de sílabas según la categoría activa
-    final silabasActuales = _categoriaSeleccionada == "Directas"
-        ? _silabasDirectas
-        : _silabasMixtas;
 
     return Stack(
       children: [
@@ -75,22 +58,16 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                     crossAxisCount: 5, // Número de columnas
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
-                    childAspectRatio: 1.3, // Relación de aspecto 1:1 para bloques cuadrados
+                    childAspectRatio: 1.3, // Relación de aspecto ajustada
                   ),
                   itemCount: silabasPorLetra.keys.length, // Número de letras
                   itemBuilder: (context, index) {
                     final letra = silabasPorLetra.keys.elementAt(index);
-                    final screenWidth = MediaQuery.of(context).size.width;
-                    final blockSize = (screenWidth - (8 * 6)) / 5; // Calcular tamaño del bloque
-
                     return GestureDetector(
                       onTap: () {
                         widget.onLetterPressed(letra); // Seleccionar letra
                       },
                       child: Container(
-                        width: blockSize, // Ancho del bloque
-                        height: blockSize, // Alto del bloque
-                        padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.blue,
                           borderRadius: BorderRadius.circular(10),
@@ -100,8 +77,8 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                             letra,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 24, // Tamaño del texto
-                              fontWeight: FontWeight.bold, // Texto en negrita
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -118,11 +95,11 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
         if (widget.letraSeleccionada.isNotEmpty)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0), // Fondo semi-transparente
+              color: Colors.black.withOpacity(0.5), // Fondo semi-transparente
               child: Center(
                 child: Container(
                   width: screenWidth * 0.9,
-                  height: screenHeight * 0.5,
+                  height: screenHeight * 0.6,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -137,11 +114,11 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                             crossAxisCount: 5,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
-                            childAspectRatio: 1.3, // Relación de aspecto ajustada (cuadrados)
+                            childAspectRatio: 1.3, // Relación de aspecto ajustada
                           ),
-                          itemCount: silabasActuales.length,
+                          itemCount: _silabasActuales.length,
                           itemBuilder: (context, index) {
-                            final silaba = silabasActuales[index];
+                            final silaba = _silabasActuales[index];
                             return GestureDetector(
                               onTap: () {
                                 flutterTts.speak(silaba); // Leer la sílaba
@@ -152,36 +129,9 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                 },
                                 feedback: Material(
                                   child: Container(
-                                    padding: EdgeInsets.all(12), // Aumentar el tamaño del bloque
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade700, // Color más oscuro para el feedback
-                                      borderRadius: BorderRadius.circular(15), // Bloques con bordes más redondeados
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 4,
-                                          offset: Offset(2, 2), // Sombra para un efecto elevado
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        silaba,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18, // Tamaño de texto más grande
-                                          fontWeight: FontWeight.bold, // Texto en negrita
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                childWhenDragging: Opacity(
-                                  opacity: 0.5,
-                                  child: Container(
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue,
+                                      color: Colors.blue.shade700,
                                       borderRadius: BorderRadius.circular(15),
                                     ),
                                     child: Center(
@@ -189,7 +139,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                         silaba,
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 16, // Tamaño del texto cuando se está arrastrando
+                                          fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -197,74 +147,74 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                   ),
                                 ),
                                 child: Container(
-                                  padding: EdgeInsets.all(12), // Ajustar el tamaño del bloque
+                                  padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(15), // Bordes redondeados
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 4,
-                                        offset: Offset(2, 2), // Sombra para un efecto elevado
-                                      ),
-                                    ],
+                                    borderRadius: BorderRadius.circular(15),
                                   ),
                                   child: Center(
                                     child: Text(
                                       silaba,
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 16, // Tamaño del texto del bloque principal
-                                        fontWeight: FontWeight.bold, // Texto en negrita
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ),
-                                onDragEnd: (details) {
-                                  // Cerrar el teclado secundario al finalizar el arrastre
-                                  widget.onClosePressed();
-                                },
                               ),
                             );
                           },
                         ),
                       ),
 
-                      // Botones de categoría y cerrar
+                      // Botones inferiores
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Botón Directas
                           ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                _categoriaSeleccionada = "Directas";
+                                _categoriaSeleccionada = "comunes";
+                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
                               });
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _categoriaSeleccionada == "Directas"
+                              backgroundColor: _categoriaSeleccionada == "comunes"
                                   ? Colors.blue
                                   : Colors.grey,
                             ),
-                            child: Text("Directas"),
+                            child: Text("Comunes"),
                           ),
-
-                          // Botón Mixtas
                           ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                _categoriaSeleccionada = "Mixtas";
+                                _categoriaSeleccionada = "trabadas";
+                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
                               });
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _categoriaSeleccionada == "Mixtas"
+                              backgroundColor: _categoriaSeleccionada == "trabadas"
+                                  ? Colors.blue
+                                  : Colors.grey,
+                            ),
+                            child: Text("Trabadas"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _categoriaSeleccionada = "mixtas";
+                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _categoriaSeleccionada == "mixtas"
                                   ? Colors.blue
                                   : Colors.grey,
                             ),
                             child: Text("Mixtas"),
                           ),
-
-                          // Botón Cerrar
                           ElevatedButton(
                             onPressed: widget.onClosePressed,
                             style: ElevatedButton.styleFrom(
