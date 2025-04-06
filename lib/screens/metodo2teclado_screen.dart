@@ -23,6 +23,7 @@ class Metodo2Teclado extends StatefulWidget {
 class _Metodo2TecladoState extends State<Metodo2Teclado> {
   String _categoriaSeleccionada = "comunes"; // Categoría seleccionada por defecto
   List<String> _silabasActuales = []; // Lista de sílabas actuales
+  bool _modoAcentuado = false; // Modo acentuado desactivado por defecto
 
   @override
   void didUpdateWidget(Metodo2Teclado oldWidget) {
@@ -30,13 +31,28 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
 
     // Actualizar las sílabas cuando se selecciona una letra
     if (oldWidget.letraSeleccionada != widget.letraSeleccionada) {
-      _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+      setState(() {
+        _categoriaSeleccionada = "comunes"; // Restablecer a "comunes"
+        _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+      });
     }
   }
 
   void _actualizarSilabas(String letra, String categoria) {
     setState(() {
-      _silabasActuales = silabasClasificadas[letra.toUpperCase()]?[categoria] ?? [];
+      // Obtener las sílabas base de la categoría seleccionada
+      List<String> silabas = silabasClasificadas[letra.toUpperCase()]?[categoria] ?? [];
+      
+      // Si el modo acentuado está activo, convertir las sílabas a sus versiones acentuadas
+      if (_modoAcentuado) {
+        _silabasActuales = silabas.map((silaba) {
+          // Usar la función acentuarSilaba para obtener la versión acentuada
+          return acentuarSilaba(silaba);
+        }).toList();
+      } else {
+        // Modo normal, usar las sílabas originales
+        _silabasActuales = silabas;
+      }
     });
   }
 
@@ -44,6 +60,8 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    // Declara buttonWidth aquí, a nivel de método
+    final buttonWidth = screenWidth * 0.18;
 
     return Stack(
       children: [
@@ -106,66 +124,71 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                   ),
                   child: Column(
                     children: [
-                      // Grid de sílabas
                       Expanded(
-                        child: GridView.builder(
-                          padding: EdgeInsets.all(8),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 1.3, // Relación de aspecto ajustada
-                          ),
-                          itemCount: _silabasActuales.length,
-                          itemBuilder: (context, index) {
-                            final silaba = _silabasActuales[index];
-                            return GestureDetector(
-                              onTap: () {
-                                flutterTts.speak(silaba); // Leer la sílaba
-                              },
-                              child: Draggable<Map<String, String>>(
-                                data: {
-                                  'contenido': silaba,
-                                },
-                                feedback: Material(
-                                  child: Container(
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade700,
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        silaba,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                        child: Stack(
+                          children: [
+                            // Grid de sílabas
+                            Container(
+                              height: screenHeight * 0.5, // Define una altura específica
+                              child: GridView.builder(
+                                padding: EdgeInsets.all(8),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 5,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  childAspectRatio: 1.3, // Relación de aspecto ajustada
+                                ),
+                                itemCount: _silabasActuales.length,
+                                itemBuilder: (context, index) {
+                                  final silaba = _silabasActuales[index];
+                                  return GestureDetector(
+                                    onTap: () {
+                                      flutterTts.speak(silaba); // Leer la sílaba
+                                    },
+                                    child: Draggable<Map<String, String>>(
+                                      data: {
+                                        'contenido': silaba,
+                                      },
+                                      feedback: Material(
+                                        child: Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade700,
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              silaba,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      child: Container(
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius: BorderRadius.circular(15),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            silaba,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      silaba,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
-                            );
-                          },
+                            ),
+                          ],
                         ),
                       ),
 
@@ -184,6 +207,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                               backgroundColor: _categoriaSeleccionada == "comunes"
                                   ? Colors.blue
                                   : Colors.grey,
+                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
                             ),
                             child: Text("Comunes"),
                           ),
@@ -198,6 +222,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                               backgroundColor: _categoriaSeleccionada == "trabadas"
                                   ? Colors.blue
                                   : Colors.grey,
+                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
                             ),
                             child: Text("Trabadas"),
                           ),
@@ -212,13 +237,28 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                               backgroundColor: _categoriaSeleccionada == "mixtas"
                                   ? Colors.blue
                                   : Colors.grey,
+                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
                             ),
                             child: Text("Mixtas"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _modoAcentuado = !_modoAcentuado; // Activar o desactivar el modo acentuado
+                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _modoAcentuado ? Colors.orange : Colors.grey,
+                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
+                            ),
+                            child: Text("Acentuadas"),
                           ),
                           ElevatedButton(
                             onPressed: widget.onClosePressed,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
+                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
                             ),
                             child: Icon(Icons.close, color: Colors.white),
                           ),

@@ -73,6 +73,8 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                       final bloque = data['contenido']!;
                       // Agregar el bloque al contenedor 1
                       bloquesContenedor1.add(bloque);
+                      // Cerrar el teclado secundario
+                      _letraSeleccionada = "";
                     });
                   },
                   builder: (context, candidateData, rejectedData) {
@@ -175,6 +177,9 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
 
                       // Validar los bloques restantes inmediatamente
                       _validarBloquesRestantes();
+
+                      // Cerrar el teclado secundario
+                      _letraSeleccionada = "";
                     });
                   },
                   builder: (context, candidateData, rejectedData) {
