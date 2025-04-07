@@ -1,6 +1,7 @@
 // lib/screens/metodo2teclado_screen.dart
 import 'package:flutter/material.dart';
 import '../constants/constants.dart'; // Importar las funciones globales y silabasClasificadas
+import '../constants/concatenacion_screen.dart'; // Importar BlockColor y concatenar bloques
 
 class Metodo2Teclado extends StatefulWidget {
   final Function(String) onLetterPressed;
@@ -141,19 +142,23 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                 itemCount: _silabasActuales.length,
                                 itemBuilder: (context, index) {
                                   final silaba = _silabasActuales[index];
+                                  final esPalabraValida = silabasEspeciales.contains(silaba.toUpperCase());
+                                  
                                   return GestureDetector(
                                     onTap: () {
                                       flutterTts.speak(silaba); // Leer la sílaba
                                     },
-                                    child: Draggable<Map<String, String>>(
+                                    child: Draggable<Map<String, dynamic>>(
+                                      // Aquí es donde modificamos el data para incluir el color adecuado
                                       data: {
                                         'contenido': silaba,
+                                        'color': esPalabraValida ? BlockColor.green : BlockColor.blue,
                                       },
                                       feedback: Material(
                                         child: Container(
                                           padding: EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue.shade700,
+                                            color: esPalabraValida ? Colors.green.shade700 : Colors.blue.shade700,
                                             borderRadius: BorderRadius.circular(15),
                                           ),
                                           child: Center(
@@ -171,13 +176,14 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                       child: Container(
                                         padding: EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: Colors.blue,
+                                          color: esPalabraValida ? Colors.green : Colors.blue,
                                           borderRadius: BorderRadius.circular(15),
                                         ),
                                         child: Center(
                                           child: Text(
                                             silaba,
                                             style: TextStyle(
+                                              color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

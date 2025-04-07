@@ -3,17 +3,17 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 const List<String> palabrasValidas = [
-"A", "AL", "CON", "DA", "DAN", "DAR", "DE", "DEL", "DON", "EL", "EN", "ES", 
+"A", "AL", "CON", "DA", "DAN", "DAR", "DE", "DEL", "DI", "DON", "EL", "EN", "ES", 
 "FÉ", "HA", "HE", "IR", "LA", "LAS", "LE", "LES", "LO", "LOS", "LUZ", 
-"MA", "MAS", "ME", "MES", "MI", "MIS", "NI", "NO", "NOS", 
-"QUE", "QUI", "SE", "SER", "SI", "SIN", "SU", "SUS", 
-"TAL", "TAN", "TE", "TEN", "TU", "TUS", "UN", 
+"MAS", "ME", "MES", "MI", "MIS", "NI", "NO", "NOS", "DOS", 
+"QUE", "QUI", "SE", "SER", "SI", "SIN", "SU", "SUS", "FÉ", "FAN", "FIN", 
+"TAL", "TAN", "TE", "TEN", "TU", "TUS", "UN", "GEL", 
 "VA", "VAN", "VE", "VEN", "VER", "VES", "VI", "VOY", "VOZ", 
-"WEB", "WI", "Y", "YA", "YO",
+"WEB", "WI", "Y", "YA", "YO", "BUS", "CRUZ", "HAN", "HAN", "HAS",
 
 "ABAJO", "ABANICO", "ABRAZAR", "ABRIGO", "ABRIGOS", "ABRIR", "AGREGADO", "AGREGAN", "AGREGAR", "AGUA", "AGUJA", "AGUJAS", 
 "ÁGUILA", "ÁGUILAS", "AHORA", "ALGO", "ALLÁ", "ALMOHADA", "ALMOHADAS", "ALTO", "ALTOS", "AMARILLO", "AMARILLOS", 
-"AMIGA", "AMIGAS", "AMIGO", "AMIGOS", "AMO", "AMOR", "ANDAR", "ANIMAL", "ANIMALES", "ANTES", "AQUÍ", "ARBOL", "ÁRBOL", 
+"AMIGA", "AMIGAS", "AMIGO", "AMIGOS", "AMA", "AMAN", "AMO", "AMOR", "ANDAR", "ANIMAL", "ANIMALES", "ANTES", "AQUÍ", "ARBOL", "ÁRBOL", 
 "ARBUSTO", "ARBUSTOS", "ARDILLA", "ARDILLAS", "ARENA", "ARENAS", "ARCOÍRIS", "ARMARIO", "ARMARIOS", "ARRIBA", 
 "ASIENTO", "AVE", "AVES", "AYER", "AZUL", "AZULES", "AZÚCAR", "BAILAR", "BAILES", "BAJO", "BAJOS", "BALLENAS", 
 "BALLENA", "BARCO", "BARCOS", "BAÑO", "BAÑOS", "BEBÉ", "BEBÉS", "BEBER", "BIEN", "BIENES", "BICICLETA", "BICICLETAS", 
@@ -30,7 +30,7 @@ const List<String> palabrasValidas = [
 "CORTINA", "CORTINAS", "CREER", "CUADRADO", "CUADRADOS", "CUARTO", "CUARTOS", "CUCHARA", "CUCHARAS", "CUCHILLO", 
 "CUCHILLOS", "CUMPLIR", "DADO", "DADOS", "DEBER", "DECIR", "DELFIN", "DELFINES", "DENSA", "DENSO", 
 "DENTRO", "DESPUÉS", "DESAYUNAR", "DESAYUNO", "DESAYUNOS", "DESIERTO", "DESIERTOS", "DESTELLO", "DETRÁS", "DIBUJAR", 
-"DIBUJO", "DIBUJOS", "DIFÍCIL", "DIFICULTAD", "DORMIR", "DORMITORIO", "DORMITORIOS", "DUDA", "DUDAS", "ECHAR", 
+"DIBUJO", "DIBUJOS", "DIFÍCIL", "DIFICULTAD", "DRONE", "DORMIR", "DORMITORIO", "DORMITORIOS", "DUDA", "DUDAS", "ECHAR", 
 "ECLIPSE", "ELEFANTE", "ELEFANTES", "EMPUJAR", "EMPUJA", "EMPUJAN", "ENCIMA", "ENCONTRAR", "ENCUENTRA", 
 "ENCUENTRO", "ENERGÍA", "ENFADO", "ENORME", "ENTRAR", "ENTRADA", "ENTRADAS", "ENTRANDO", "ENVIAR", "ERIZO", "ERIZOS", 
 "ERROR", "ERRORES", "ESCALA", "ESCALAN", "ESCALANDO", "ESCALERA", "ESCALERAS", "ESCALÓN", "ESCALONES", "ESCONDE", 
@@ -40,7 +40,7 @@ const List<String> palabrasValidas = [
 "FELIZ", "FIESTA", "FIESTAS", "FLAMENCO", "FLAMENCOS", "FLOR", "FLORES", "FRASE", "FRASES", "FRÍO", "FRUTA", "FRUTAS", 
 "FROTAR", "FUEGO", "FUEGOS", "FUENTE", "FUENTES", "FUERA", "FUERTE", "FUGAZ", "GALAXIA", "GALAXIAS", "GALLO", "GALLOS", 
 "GARAJE", "GARAJES", "GATO", "GATOS", "GIRA", "GIRANDO", "GIRAR", "GORILA", "GORILAS", "GORRA", "GORRAS", "GORRO", 
-"GORROS", "GRACIAS", "GRANDE", "GRANDES", "GRIS", "GUANTE", "GUANTES", "HABLAR", "HACER", "HACIA", "HIELO", "HIJO", 
+"GORROS", "GRACIAS", "GRANDE", "GRANDES", "GRIS", "GUANTE", "GUANTES", "HABLAR", "HACER", "HACE", "HACEN", "HACEMOS", "HACIA", "HIELO", "HIJO", 
 "HOGAR", "HOGARES", "HOJA", "HOJAS", "HOLA", "HONGO", "HONGOS", "HORMIGA", "HORMIGAS", "HOY", "HUECO", 
 "HUELLA", "HUELLAS", "IDEA", "IDEAS", "IGLESIA", "IGLESIAS", "IGUAL", "ISLA", "ISLAS", "IRSE", "JABALÍ", "JABALÍES", 
 "JARDÍN", "JARDINES", "JUGAR", "JUGUETE", "JUGUETES", "LAGO", "LAGOS", "LÁMPARA", "LÁMPARAS", "LANZAR", "LECHE", 
@@ -94,7 +94,7 @@ const List<String> palabrasValidas = [
 ];
 
 const List<String> silabasEspeciales = [
-  "A", "AL", "CON", "DA", "DAN", "DAR", "DE", "EL", "EN", "ES", "FE", "HA", "HE", "LA",
+  "A", "AL", "CON", "DA", "DAN", "DAR", "DE", "EL", "EN", "ES", "FÉ", "HA", "HE", "LA",
   "LE", "LO", "LAS", "LOS", "LUZ", "ME", "MI", "MAS", "MES", "MIS", "NI",
   "NO", "QUE", "QUI", "SE", "SI", "SU", "SIN", "TE", "TU", "UN", "VA", "VAN"
   "VE", "VEN", "VER", "VI", "WEB", "WI", "Y", "YA", "YO",
@@ -133,7 +133,7 @@ const List<String> IniciosDePalabras = [
 "RECU", "RECUER", "TENI", "TERMI", "TERMINARO", "POQUI", "APA", "ENCE", "ENCEN", "ENCI", 
 "ENCIEN", "ENTE", "ENTEN", "ENTENDE", "ENTI", "ENTIEN", "CORA", "CORAZÓ", "SOLE", "SOLEDA", 
 "SOLI", "SOLITARI", "SUE", "ÁNGE", "ÁNGELE", "ANGE", "ANGELI", "ANGELICA", "ACO", "ACOM", 
-"ACOMPA", "COMPA", "COMPAÑI", "COMPAÑE", "PASAMO", "PASARO",  
+"ACOMPA", "COMPA", "COMPAÑI", "COMPAÑE", "PASAMO", "PASARO", "HACEMO",
 
 ];
 
@@ -181,7 +181,7 @@ const Map<String, Map<String, List<String>>> silabasClasificadas = {
     "trabadas": ["BLA", "BLE", "BLI", "BLO", "BLU", "BRA", "BRE", "BRI", "BRO", "BRU", 
                  "BLAS", "BLES", "BLIS", "BLOS", "BLUS", "BRAS", "BRES", "BRIS", "BROS", "BRUS",
                  "BLAN", "BLEN", "BLIN", "BLON", "BLUN", "BRAN", "BREN", "BRIN", "BRON", "BRUN"],
-    "mixtas": ["BAL", "BEL", "BIL", "BOL", "BUL", "BAM", "BEM", "BIM", "OBM", "BUM", 
+    "mixtas": ["BAL", "BEL", "BIL", "BOL", "BUL", "BAM", "BEM", "BIM", "BOM", "BUM", 
                "BAN", "BEN", "BIN", "BON", "BUN", "BAR", "BER", "BIR", "BOR", "BUR", 
                "BAS", "BES", "BIS", "BOS", "BUS"],
   },
@@ -190,7 +190,7 @@ const Map<String, Map<String, List<String>>> silabasClasificadas = {
     "trabadas": ["CHA", "CHE", "CHI", "CHO", "CHU", "CRA", "CRE", "CRI", "CRO", "CRU",
                 "CLAS", "CLES", "CLIS", "CLOS", "CLUS", "CRAS", "CRES", "CRIS", "CROS", "CRUS",
                 "CLAN", "CLEN", "CLIN", "CLON", "CLUN", "CRAN", "CREN", "CRIN", "CRON", "CRUN"],
-    "mixtas": ["CAL", "CEL", "CIL", "COL", "CUL", "CAM", "CEM", "CIM", "CM", "CUM", 
+    "mixtas": ["CAL", "CEL", "CIL", "COL", "CUL", "CAM", "CEM", "CIM", "COM", "CUM", 
                "CAN", "CEN", "CIN", "CON", "CUN", "CAR", "CER", "CIR", "COR", "CUR", 
                "CAS", "CES", "CIS", "COS", "CUS"],
   },
@@ -234,7 +234,7 @@ const Map<String, Map<String, List<String>>> silabasClasificadas = {
                "HAS", "HES", "HIS", "HOS", "HUS"],
   },
   "I": {
-    "comunes": ["IS", "IN", "IR", "IM"],
+    "comunes": ["I", "IS", "IN", "IR", "IM"],
     "trabadas": [],
     "mixtas": [],
   },
@@ -251,12 +251,12 @@ const Map<String, Map<String, List<String>>> silabasClasificadas = {
   "L": {
     "comunes": ["LA", "LE", "LI", "LO", "LU"],
     "trabadas": ["LLA", "LLE", "LLI", "LLO", "LLU"],
-    "mixtas": [],
+    "mixtas": ["LLAN", "LLEN", "LLIN", "LLON", "LLUN", "LLAS", "LLES", "LLIS", "LLOS", "LLUS",],
   },
   "M": {
     "comunes": ["MA", "ME", "MI", "MO", "MU"],
     "trabadas": [],
-    "mixtas": [],
+    "mixtas": ["MAL", "MEL", "MIL", "MOL", "MUL", "MAS", "MES", "MIS", "MOS", "MUS"],
   },
   "N": {
     "comunes": ["NA", "NE", "NI", "NO", "NU"],

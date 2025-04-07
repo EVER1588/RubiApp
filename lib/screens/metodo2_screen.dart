@@ -4,6 +4,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../constants/concatenacion_screen.dart'; // Importa el archivo donde está definida la función
 import '../constants/constants.dart'; // Importar las funciones globales
 import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
+import 'package:uuid/uuid.dart'; // Importar la biblioteca uuid
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -16,12 +17,15 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   final FlutterTts flutterTts = FlutterTts(); // Instancia de Flutter TTS
   String _letraSeleccionada = "";
   
-  // Lista de bloques del contenedor 2
-  List<String> bloquesContenedor2 = [];
-  List<String> bloquesContenedor1 = [];
+  // Lista de bloques con identificadores únicos
+  List<Map<String, dynamic>> bloquesContenedor2 = [];
+  List<Map<String, dynamic>> bloquesContenedor1 = [];
 
   // Mapa para almacenar los colores de los bloques
   Map<String, BlockColor> coloresBloques = {};
+  
+  // Generador de UUIDs
+  final Uuid _uuid = Uuid();
 
   @override
   void initState() {
@@ -59,20 +63,51 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
         children: [
           // Contenedor 1 (Azul) con restricciones y botón de PLAY
           Expanded(
-            flex: 1, // Mantener flex para distribuir espacio
+            flex: 1,
             child: Stack(
               children: [
-                // Área de DragTarget
+                // Área de DragTarget para el contenedor completo
                 DragTarget<Map<String, dynamic>>(
                   onWillAccept: (data) {
-                    // Solo aceptar bloques verdes (palabras válidas)
-                    return data?['color'] == BlockColor.green;
+                    // Aceptar bloques verdes del teclado o cualquier bloque del mismo contenedor 1
+                    // o bloques verdes del contenedor 2
+                    return data?['color'] == BlockColor.green || data?['origen'] == 'contenedor1';
                   },
                   onAccept: (data) {
                     setState(() {
                       final bloque = data['contenido']!;
-                      // Agregar el bloque al contenedor 1
-                      bloquesContenedor1.add(bloque);
+                      final origen = data['origen'] ?? '';
+                      final id = data['id'];
+                      
+                      // Si el bloque viene del mismo contenedor 1, reordenar (mover al final)
+                      if (origen == 'contenedor1') {
+                        // Buscar y remover el bloque por su ID
+                        final index = bloquesContenedor1.indexWhere((b) => b['id'] == id);
+                        if (index != -1) {
+                          final bloqueMovido = bloquesContenedor1.removeAt(index);
+                          // Añadirlo al final
+                          bloquesContenedor1.add(bloqueMovido);
+                        }
+                      } 
+                      // Si el bloque viene del contenedor 2 y es verde (palabra válida)
+                      else if (origen == 'contenedor2' && data['color'] == BlockColor.green) {
+                        // Agregar al contenedor 1
+                        bloquesContenedor1.add({
+                          'id': _uuid.v4(),
+                          'texto': bloque,
+                        });
+                        
+                        // Eliminar del contenedor 2
+                        bloquesContenedor2.removeWhere((b) => b['id'] == id);
+                      }
+                      // Si viene del teclado, agregar como nuevo
+                      else {
+                        bloquesContenedor1.add({
+                          'id': _uuid.v4(),
+                          'texto': bloque,
+                        });
+                      }
+                      
                       // Cerrar el teclado secundario
                       _letraSeleccionada = "";
                     });
@@ -85,7 +120,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                         vertical: screenHeight * 0.01,
                       ),
                       constraints: BoxConstraints(
-                        minHeight: screenHeight * 0.2, // Alto mínimo del contenedor
+                        minHeight: screenHeight * 0.2,
                       ),
                       decoration: BoxDecoration(
                         color: Color.fromRGBO(0, 0, 255, 0.3),
@@ -99,53 +134,91 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                           Chip(
                             label: GestureDetector(
                               onTap: () async {
-                                // Concatenar todas las palabras del contenedor 1
-                                final texto = bloquesContenedor1.join(' ');
+                                final texto = bloquesContenedor1.map((b) => b['texto']).join(' ');
                                 if (texto.isNotEmpty) {
-                                  await flutterTts.speak(texto); // Reproducir el texto
+                                  await flutterTts.speak(texto);
                                 }
                               },
                               child: Icon(
-                                Icons.play_arrow, // Solo el ícono de reproducción
+                                Icons.play_arrow,
                                 color: Colors.white,
                               ),
                             ),
-                            backgroundColor: Colors.green, // Color del botón
+                            backgroundColor: Colors.green,
                           ),
 
                           // Bloques del contenedor 1
                           ...bloquesContenedor1.map((bloque) {
-                            return Draggable<Map<String, dynamic>>(
-                              data: {
-                                'contenido': bloque,
-                                'color': BlockColor.green,
+                            return GestureDetector(
+                              onTap: () {
+                                decirTexto(bloque['texto']);
                               },
-                              feedback: Material(
-                                color: Colors.transparent,
-                                child: Chip(
-                                  label: Text(
-                                    bloque,
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              ),
-                              childWhenDragging: Opacity(
-                                opacity: 0.5,
-                                child: Chip(
-                                  label: Text(
-                                    bloque,
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              ),
-                              child: Chip(
-                                label: Text(
-                                  bloque,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                                backgroundColor: Colors.green,
+                              child: DragTarget<Map<String, dynamic>>(
+                                onWillAccept: (data) {
+                                  // Solo aceptar bloques del mismo contenedor para intercambio
+                                  return data?['origen'] == 'contenedor1';
+                                },
+                                onAccept: (data) {
+                                  setState(() {
+                                    // Intercambiar bloques
+                                    final draggedId = data['id'];
+                                    final targetId = bloque['id'];
+                                    
+                                    if (draggedId != targetId) { // Evitar intercambio consigo mismo
+                                      // Encontrar índices
+                                      final draggedIndex = bloquesContenedor1.indexWhere((b) => b['id'] == draggedId);
+                                      final targetIndex = bloquesContenedor1.indexWhere((b) => b['id'] == targetId);
+                                      
+                                      if (draggedIndex != -1 && targetIndex != -1) {
+                                        // Guardar temporalmente
+                                        final bloqueTemp = bloquesContenedor1[draggedIndex];
+                                        // Swap
+                                        bloquesContenedor1[draggedIndex] = bloquesContenedor1[targetIndex];
+                                        bloquesContenedor1[targetIndex] = bloqueTemp;
+                                      }
+                                    }
+                                  });
+                                },
+                                builder: (context, candidateData, rejectedData) {
+                                  return Draggable<Map<String, dynamic>>(
+                                    data: {
+                                      'id': bloque['id'],
+                                      'contenido': bloque['texto'],
+                                      'color': BlockColor.green,
+                                      'origen': 'contenedor1',
+                                    },
+                                    feedback: Material(
+                                      color: Colors.transparent,
+                                      child: Chip(
+                                        label: Text(
+                                          bloque['texto'],
+                                          style: TextStyle(fontSize: 16, color: Colors.white),
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    ),
+                                    childWhenDragging: Opacity(
+                                      opacity: 0.5,
+                                      child: Chip(
+                                        label: Text(
+                                          bloque['texto'],
+                                          style: TextStyle(fontSize: 16, color: Colors.white),
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    ),
+                                    child: Chip(
+                                      label: Text(
+                                        bloque['texto'],
+                                        style: TextStyle(fontSize: 16, color: Colors.white),
+                                      ),
+                                      // Solo usar el shade300 cuando realmente hay un candidato sobre el bloque
+                                      backgroundColor: candidateData != null && candidateData.isNotEmpty
+                                          ? Colors.green.shade300  
+                                          : Colors.green,
+                                    ),
+                                  );
+                                },
                               ),
                             );
                           }).toList(),
@@ -170,10 +243,41 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                     setState(() {
                       final bloque = details.data['contenido']!;
                       final color = details.data['color'] ?? BlockColor.blue;
+                      final id = details.data['id'];
+                      final origen = details.data['origen'] ?? '';
 
-                      // Agregar el bloque al contenedor 2 con su color correspondiente
-                      bloquesContenedor2.add(bloque);
-                      coloresBloques[bloque] = color;
+                      // Si el bloque proviene del mismo contenedor 2, reordenar en lugar de duplicar
+                      if (origen == 'contenedor2') {
+                        // Buscar el bloque por su ID
+                        final index = bloquesContenedor2.indexWhere((b) => b['id'] == id);
+                        if (index != -1) {
+                          // Remover el bloque de su posición actual
+                          final bloqueMovido = bloquesContenedor2.removeAt(index);
+                          // Añadirlo al final de la lista
+                          bloquesContenedor2.add(bloqueMovido);
+                        }
+                      } 
+                      // Si el bloque viene del contenedor 1, eliminarlo de allí y añadirlo aquí
+                      else if (origen == 'contenedor1') {
+                        // Agregar el bloque al contenedor 2
+                        bloquesContenedor2.add({
+                          'id': _uuid.v4(),
+                          'texto': bloque,
+                        });
+                        coloresBloques[bloque] = color;
+                        
+                        // Eliminar el bloque del contenedor 1
+                        bloquesContenedor1.removeWhere((b) => b['id'] == id);
+                      } 
+                      // Si proviene del teclado, simplemente añadirlo como nuevo
+                      else {
+                        // Si proviene de otra fuente (teclado), añadir como nuevo
+                        bloquesContenedor2.add({
+                          'id': _uuid.v4(),
+                          'texto': bloque,
+                        });
+                        coloresBloques[bloque] = color;
+                      }
 
                       // Validar los bloques restantes inmediatamente
                       _validarBloquesRestantes();
@@ -203,25 +307,32 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                             children: bloquesContenedor2.map((bloque) {
                               return GestureDetector(
                                 onTap: () {
-                                  decirTexto(bloque); // Leer el texto al tocar el bloque
+                                  decirTexto(bloque['texto']); // Leer el texto al tocar el bloque
                                 },
                                 child: DragTarget<Map<String, dynamic>>(
                                   onWillAccept: (data) => true,
                                   onAccept: (data) {
                                     setState(() {
                                       // Concatenar los bloques utilizando la función `concatenarBloques`
-                                      final resultado = concatenarBloques(bloque, data['contenido']);
+                                      final resultado = concatenarBloques(bloque['texto'], data['contenido']);
                                       final nuevaCadena = resultado['cadena'];
                                       final nuevoColor = resultado['color'];
 
-                                      // Reemplazar los bloques con el bloque concatenado
-                                      bloquesContenedor2.remove(bloque);
-                                      bloquesContenedor2.remove(data['contenido']);
-                                      bloquesContenedor2.add(nuevaCadena);
+                                      // Eliminar los bloques originales (usando ID)
+                                      bloquesContenedor2.removeWhere((b) => b['id'] == bloque['id']);
+                                      
+                                      // Encontrar y eliminar el otro bloque por su ID
+                                      if (data['origen'] == 'contenedor2') {
+                                        bloquesContenedor2.removeWhere((b) => b['id'] == data['id']);
+                                      }
+                                      
+                                      // Agregar el bloque concatenado con un nuevo ID
+                                      bloquesContenedor2.add({
+                                        'id': _uuid.v4(),
+                                        'texto': nuevaCadena,
+                                      });
 
                                       // Actualizar el color del bloque concatenado
-                                      coloresBloques.remove(bloque);
-                                      coloresBloques.remove(data['contenido']);
                                       coloresBloques[nuevaCadena] = nuevoColor;
 
                                       // Leer el bloque resultante
@@ -231,35 +342,37 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                   builder: (context, candidateData, rejectedData) {
                                     return Draggable<Map<String, dynamic>>(
                                       data: {
-                                        'contenido': bloque,
-                                        'color': coloresBloques[bloque], // Pasar el color actual
+                                        'id': bloque['id'],
+                                        'contenido': bloque['texto'],
+                                        'color': coloresBloques[bloque['texto']], // Pasar el color actual
+                                        'origen': 'contenedor2', // Identificar origen
                                       },
                                       feedback: Material(
                                         color: Colors.transparent,
                                         child: Chip(
                                           label: Text(
-                                            bloque,
+                                            bloque['texto'],
                                             style: TextStyle(fontSize: 16, color: Colors.white),
                                           ),
-                                          backgroundColor: _getColor(coloresBloques[bloque]),
+                                          backgroundColor: _getColor(coloresBloques[bloque['texto']]),
                                         ),
                                       ),
                                       childWhenDragging: Opacity(
                                         opacity: 0.5,
                                         child: Chip(
                                           label: Text(
-                                            bloque,
+                                            bloque['texto'],
                                             style: TextStyle(fontSize: 16, color: Colors.white),
                                           ),
-                                          backgroundColor: _getColor(coloresBloques[bloque]),
+                                          backgroundColor: _getColor(coloresBloques[bloque['texto']]),
                                         ),
                                       ),
                                       child: Chip(
                                         label: Text(
-                                          bloque,
+                                          bloque['texto'],
                                           style: TextStyle(fontSize: 16, color: Colors.white),
                                         ),
-                                        backgroundColor: _getColor(coloresBloques[bloque]),
+                                        backgroundColor: _getColor(coloresBloques[bloque['texto']]),
                                       ),
                                     );
                                   },
@@ -281,10 +394,17 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                     onWillAccept: (data) => true,
                     onAccept: (data) {
                       setState(() {
-                        // Eliminar el bloque arrastrado
-                        final bloque = data['contenido']!;
-                        bloquesContenedor2.remove(bloque);
-                        coloresBloques.remove(bloque);
+                        // Eliminar el bloque arrastrado usando su ID
+                        final String id = data['id'];
+                        final String origen = data['origen'] ?? '';
+                        
+                        if (origen == 'contenedor1') {
+                          // Eliminar del contenedor 1
+                          bloquesContenedor1.removeWhere((b) => b['id'] == id);
+                        } else if (origen == 'contenedor2') {
+                          // Eliminar del contenedor 2
+                          bloquesContenedor2.removeWhere((b) => b['id'] == id);
+                        }
 
                         // Validar los bloques restantes
                         _validarBloquesRestantes();
@@ -330,7 +450,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               onSilabaDragged: (silaba) {
                 decirTexto(silaba); // Leer la sílaba arrastrada
                 setState(() {
-                  bloquesContenedor2.add(silaba); // Agregar la sílaba al contenedor 2
+                  bloquesContenedor2.add({
+                    'id': _uuid.v4(),
+                    'texto': silaba,
+                  }); // Agregar la sílaba al contenedor 2
                   _validarBloquesRestantes(); // Validar los bloques restantes inmediatamente
                 });
               },
@@ -357,15 +480,15 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
 
   void _validarBloquesRestantes() {
     for (var bloque in bloquesContenedor2) {
-      final bloqueLimpio = bloque.trim().toUpperCase(); // Asegurar formato consistente
+      final bloqueLimpio = bloque['texto'].trim().toUpperCase(); // Asegurar formato consistente
       if (palabrasValidas.contains(bloqueLimpio)) {
-        coloresBloques[bloque] = BlockColor.green; // Palabra válida
+        coloresBloques[bloque['texto']] = BlockColor.green; // Palabra válida
       } else if (_esSilabaDeLista(bloqueLimpio)) {
-        coloresBloques[bloque] = BlockColor.blue; // Sílaba válida
+        coloresBloques[bloque['texto']] = BlockColor.blue; // Sílaba válida
       } else if (IniciosDePalabras.contains(bloqueLimpio)) {
-        coloresBloques[bloque] = BlockColor.orange; // Inicio de palabra válido
+        coloresBloques[bloque['texto']] = BlockColor.orange; // Inicio de palabra válido
       } else {
-        coloresBloques[bloque] = BlockColor.red; // Bloque inválido
+        coloresBloques[bloque['texto']] = BlockColor.red; // Bloque inválido
       }
     }
   }
