@@ -61,7 +61,6 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    // Declara buttonWidth aquí, a nivel de método
     final buttonWidth = screenWidth * 0.18;
 
     return Stack(
@@ -72,12 +71,12 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
             children: [
               Expanded(
                 child: GridView.builder(
-                  padding: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(BLOCK_PADDING),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5, // Número de columnas
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1.3, // Relación de aspecto ajustada
+                    crossAxisCount: 5,
+                    crossAxisSpacing: BLOCK_SPACING,
+                    mainAxisSpacing: BLOCK_SPACING,
+                    childAspectRatio: KEYBOARD_GRID_ASPECT_RATIO, // Usar constante
                   ),
                   itemCount: silabasPorLetra.keys.length, // Número de letras
                   itemBuilder: (context, index) {
@@ -88,8 +87,8 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(10),
+                          color: BLOCK_BLUE, // Usar constante de color
+                          borderRadius: BorderRadius.circular(CONTAINER_BORDER_RADIUS),
                         ),
                         child: Center(
                           child: Text(
@@ -114,30 +113,61 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
         if (widget.letraSeleccionada.isNotEmpty)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.5), // Fondo semi-transparente
+              color: Colors.black.withOpacity(0), // Fondo semi-transparente
               child: Center(
                 child: Container(
-                  width: screenWidth * 0.9,
-                  height: screenHeight * 0.6,
+                  width: screenWidth * KEYBOARD_WIDTH_FACTOR, // Usar constante
+                  height: screenHeight * KEYBOARD_HEIGHT_FACTOR, // Usar constante
+                  margin: EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(KEYBOARD_BORDER_RADIUS), // Usar constante
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(1),
+                        spreadRadius: 2,
+                        blurRadius: 10,
+                        offset: Offset(0,8),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
+                      // Container para el título
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                            topRight: Radius.circular(15),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Sílabas con ${widget.letraSeleccionada.toUpperCase()}",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
                       Expanded(
                         child: Stack(
                           children: [
                             // Grid de sílabas
                             Container(
-                              height: screenHeight * 0.5, // Define una altura específica
+                              height: screenHeight * 0.45, // Reducido de 0.5 a 0.45
                               child: GridView.builder(
                                 padding: EdgeInsets.all(8),
                                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 5,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8,
-                                  childAspectRatio: 1.3, // Relación de aspecto ajustada
+                                  childAspectRatio: 1.6, // Relación de aspecto ajustada
                                 ),
                                 itemCount: _silabasActuales.length,
                                 itemBuilder: (context, index) {
@@ -156,7 +186,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                       },
                                       feedback: Material(
                                         child: Container(
-                                          padding: EdgeInsets.all(12),
+                                          padding: EdgeInsets.all(18),
                                           decoration: BoxDecoration(
                                             color: esPalabraValida ? Colors.green.shade700 : Colors.blue.shade700,
                                             borderRadius: BorderRadius.circular(15),
@@ -165,7 +195,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                             child: Text(
                                               silaba,
                                               style: TextStyle(
-                                                color: Colors.white,
+                                                color: const Color.fromARGB(255, 255, 255, 255),
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -174,7 +204,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                         ),
                                       ),
                                       child: Container(
-                                        padding: EdgeInsets.all(12),
+                                        padding: EdgeInsets.all(6),
                                         decoration: BoxDecoration(
                                           color: esPalabraValida ? Colors.green : Colors.blue,
                                           borderRadius: BorderRadius.circular(15),
@@ -183,7 +213,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                           child: Text(
                                             silaba,
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: const Color.fromARGB(255, 255, 255, 255),
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -198,77 +228,65 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                         ),
                       ),
 
-                      // Botones inferiores
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _categoriaSeleccionada = "comunes";
-                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _categoriaSeleccionada == "comunes"
-                                  ? Colors.blue
-                                  : Colors.grey,
-                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
+                      // Botones inferiores - código modificado
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 12.0, top: 8.0), // Margen inferior y superior
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildRoundedButton(
+                              "Comunes",
+                              _categoriaSeleccionada == "comunes" ? Colors.blue : Colors.grey,
+                              () {
+                                setState(() {
+                                  _categoriaSeleccionada = "comunes";
+                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                });
+                              },
+                              buttonWidth,
                             ),
-                            child: Text("Comunes"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _categoriaSeleccionada = "trabadas";
-                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _categoriaSeleccionada == "trabadas"
-                                  ? Colors.blue
-                                  : Colors.grey,
-                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
+                            _buildRoundedButton(
+                              "Trabadas",
+                              _categoriaSeleccionada == "trabadas" ? Colors.blue : Colors.grey,
+                              () {
+                                setState(() {
+                                  _categoriaSeleccionada = "trabadas";
+                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                });
+                              },
+                              buttonWidth,
                             ),
-                            child: Text("Trabadas"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _categoriaSeleccionada = "mixtas";
-                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _categoriaSeleccionada == "mixtas"
-                                  ? Colors.blue
-                                  : Colors.grey,
-                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
+                            _buildRoundedButton(
+                              "Mixtas",
+                              _categoriaSeleccionada == "mixtas" ? Colors.blue : Colors.grey,
+                              () {
+                                setState(() {
+                                  _categoriaSeleccionada = "mixtas";
+                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                });
+                              },
+                              buttonWidth,
                             ),
-                            child: Text("Mixtas"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _modoAcentuado = !_modoAcentuado; // Activar o desactivar el modo acentuado
-                                _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _modoAcentuado ? Colors.orange : Colors.grey,
-                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
+                            _buildRoundedButton(
+                              "Acentuadas",
+                              _modoAcentuado ? Colors.orange : Colors.grey,
+                              () {
+                                setState(() {
+                                  _modoAcentuado = !_modoAcentuado; // Activar o desactivar el modo acentuado
+                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                });
+                              },
+                              buttonWidth,
                             ),
-                            child: Text("Acentuadas"),
-                          ),
-                          ElevatedButton(
-                            onPressed: widget.onClosePressed,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              fixedSize: Size(buttonWidth, 50), // Usar el ancho calculado
+                            _buildRoundedButton(
+                              "",
+                              Colors.red,
+                              widget.onClosePressed,
+                              buttonWidth,
+                              icon: Icon(Icons.close, color: Colors.white),
                             ),
-                            child: Icon(Icons.close, color: Colors.white),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -277,6 +295,32 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
             ),
           ),
       ],
+    );
+  }
+
+  // Método para construir botones redondeados
+  Widget _buildRoundedButton(String text, Color color, VoidCallback onPressed, double width, {Icon? icon}) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 4.0), // Espacio horizontal entre botones
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(vertical: BUTTON_PADDING_VERTICAL), // Usar constante
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(BUTTON_BORDER_RADIUS), // Usar constante
+          ),
+          fixedSize: Size(width - 8, 50), // Ancho ajustado para el margen
+        ),
+        child: icon ?? Text(
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: BUTTON_TEXT_SIZE, // Usar constante
+          ),
+        ),
+      ),
     );
   }
 }
