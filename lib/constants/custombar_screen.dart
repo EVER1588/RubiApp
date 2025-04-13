@@ -1,46 +1,158 @@
 import 'package:flutter/material.dart';
+import '../constants/state_manager.dart';
 
 class CustomBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final VoidCallback? onBackPressed;
-  final List<Widget>? actions;
+  final VoidCallback onBackPressed;
+  final VoidCallback? onResetPressed;
+  final int? score;
 
-  const CustomBar({
-    Key? key,
-    required this.title,
-    this.onBackPressed,
-    this.actions,
-  }) : super(key: key);
+  CustomBar({
+    required this.onBackPressed,
+    this.onResetPressed,
+    this.score,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.blue, // Cambia el color según tu diseño
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top), // Espacio para el notch
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Botón de retroceso
-          IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: onBackPressed ?? () => Navigator.pop(context),
+    return AppBar(
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue[700]!, Colors.blue[500]!],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          // Título
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        ),
+      ),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: onBackPressed,
+      ),
+      actions: [
+        if (score != null)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Center(
+              child: Text(
+                '⭐ $score',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ),
-          // Acciones adicionales
-          Row(
+        if (onResetPressed != null)
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.white),
+            onPressed: onResetPressed,
+          ),
+        IconButton(
+          icon: Icon(Icons.help_outline, color: Colors.white),
+          onPressed: () {
+            // Mostrar diálogo de ayuda
+          },
+        ),
+        IconButton(
+          icon: Icon(Icons.info_outline, color: Colors.white),
+          onPressed: () => _mostrarInformacion(context),
+        ),
+      ],
+    );
+  }
+
+  void _mostrarInformacion(BuildContext context) {
+    final stateManager = StateManager();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Estadísticas', 
+            style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold)
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: actions ?? [],
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildEstadisticaItem(
+                'Palabras Únicas:',
+                stateManager.palabrasUnicas.length.toString(),
+                Icons.auto_stories,
+              ),
+              SizedBox(height: 12),
+              _buildEstadisticaItem(
+                'Total Palabras:',
+                stateManager.totalPalabrasUsadas.toString(),
+                Icons.library_books,
+              ),
+              SizedBox(height: 12),
+              _buildEstadisticaItem(
+                'Sílabas Utilizadas:',
+                stateManager.totalSilabasUsadas.toString(),
+                Icons.short_text,
+              ),
+              SizedBox(height: 20),
+              Text('Logros Desbloqueados:', 
+                style: TextStyle(fontWeight: FontWeight.bold)
+              ),
+              _buildLogro(
+                'Primera Palabra',
+                stateManager.logrosDesbloqueados['primera_palabra'] ?? false,
+              ),
+              _buildLogro(
+                '10 Palabras Descubiertas',
+                stateManager.logrosDesbloqueados['diez_palabras'] ?? false,
+              ),
+              _buildLogro(
+                'Primera Sílaba',
+                stateManager.logrosDesbloqueados['primera_silaba'] ?? false,
+              ),
+              _buildLogro(
+                '50 Sílabas Utilizadas',
+                stateManager.logrosDesbloqueados['cincuenta_silabas'] ?? false,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cerrar'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEstadisticaItem(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.blue[700], size: 20),
+        SizedBox(width: 8),
+        Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
+        Spacer(),
+        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildLogro(String nombre, bool desbloqueado) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(
+            desbloqueado ? Icons.emoji_events : Icons.lock_outline,
+            color: desbloqueado ? Colors.amber : Colors.grey,
+            size: 16,
+          ),
+          SizedBox(width: 8),
+          Text(
+            nombre,
+            style: TextStyle(
+              color: desbloqueado ? Colors.black87 : Colors.grey,
+            ),
           ),
         ],
       ),
@@ -48,5 +160,5 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight + MediaQueryData.fromWindow(WidgetsBinding.instance.window).padding.top);
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
 }

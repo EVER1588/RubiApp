@@ -204,7 +204,7 @@ const List<String> palabrasValidas = [
   "UVA", "UVAS", "SANDÍA", "SANDÍAS", "MELÓN", "MELONES", "FRESA", "FRESAS",
   "LIMÓN", "LIMONES", "PIÑA", "PIÑAS", "MANGO", "MANGOS", "CIRUELA", "CIRUELAS", 
   "CEREZA", "CEREZAS", "COCO", "COCOS", "KIWI", "KIWIS", "DURAZNO", "DURAZNOS",
-  "MANDARINA", "MANDARINAS", "HIGO", "HIGOS", "MORA", "MORAS",
+  "MANDARINA", "MANDARINAS", "HIGO", "HIGOS", "MORA", "MORAS", "GOLF",
   "TOMATE", "TOMATES", "LECHUGA", "LECHUGAS", "ZANAHORIA", "ZANAHORIAS", "CEBOLLA", "CEBOLLAS",
   "AJO", "AJOS", "PAPA", "PAPAS", "BRÓCOLI", "ESPINACA", "ESPINACAS", "PEPINO", "PEPINOS",
   "CALABAZA", "CALABAZAS", "MAÍZ", "RÁBANO", "RÁBANOS", "PIMIENTO", "PIMIENTOS", 
@@ -519,7 +519,7 @@ const Map<String, Map<String, List<String>>> silabasClasificadas = {
   },
   "R": {
     "comunes": ["RA", "RE", "RI", "RO", "RU"],
-    "trabadas": ["RRA", "REE", "RRI", "RRO", "RRU", "RRAS", "REES", "RRIS", "RROS", "RRUS",
+    "trabadas": ["RRA", "RRE", "RRI", "RRO", "RRU", "RRAS", "RRES", "RRIS", "RROS", "RRUS",
                  "RREI",],
     "mixtas": ["RAL", "REL", "RIL", "ROL", "RUL", "RAM", "REM", "RIM", "ROM", "RUM", 
                "RAN", "REN", "RIN", "RON", "RUN", "RAR", "RER", "RIR", "ROR", "RUR", 

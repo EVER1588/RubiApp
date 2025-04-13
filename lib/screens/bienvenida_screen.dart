@@ -12,7 +12,7 @@ class BienvenidaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        title: 'Bienvenida',
+        
         onBackPressed: () {
           Navigator.pop(context); // Acción al presionar el botón de retroceso
         },

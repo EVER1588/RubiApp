@@ -8,14 +8,17 @@ class Metodo2Teclado extends StatefulWidget {
   final String letraSeleccionada;
   final VoidCallback onClosePressed;
   final Function(String) onSilabaDragged;
+  final Function(bool) onAutoCerrarChanged;
+  final double gridAspectRatio; // Nuevo parámetro
 
-  Metodo2Teclado({
-    Key? key,
+  const Metodo2Teclado({
     required this.onLetterPressed,
     required this.letraSeleccionada,
     required this.onClosePressed,
     required this.onSilabaDragged,
-  }) : super(key: key);
+    required this.onAutoCerrarChanged,
+    this.gridAspectRatio = KEYBOARD_GRID_ASPECT_RATIO, // Valor por defecto
+  });
 
   @override
   _Metodo2TecladoState createState() => _Metodo2TecladoState();
@@ -25,6 +28,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   String _categoriaSeleccionada = "comunes"; // Categoría seleccionada por defecto
   List<String> _silabasActuales = []; // Lista de sílabas actuales
   bool _modoAcentuado = false; // Modo acentuado desactivado por defecto
+  bool _cerrarAutomaticamente = true; // Estado inicial del check
 
   @override
   void didUpdateWidget(Metodo2Teclado oldWidget) {
@@ -34,6 +38,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
     if (oldWidget.letraSeleccionada != widget.letraSeleccionada) {
       setState(() {
         _categoriaSeleccionada = "comunes"; // Restablecer a "comunes"
+        _modoAcentuado = false; // Restablecer modo acentuado
         _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
       });
     }
@@ -61,7 +66,8 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final buttonWidth = screenWidth * 0.18;
+    final keyboardWidth = screenWidth * KEYBOARD_WIDTH_FACTOR;
+    final buttonWidth = (keyboardWidth - (8 * 6)) / 5; // Cambiar 24 a 8
 
     return Stack(
       children: [
@@ -76,27 +82,52 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                     crossAxisCount: 5,
                     crossAxisSpacing: BLOCK_SPACING,
                     mainAxisSpacing: BLOCK_SPACING,
-                    childAspectRatio: KEYBOARD_GRID_ASPECT_RATIO, // Usar constante
+                    childAspectRatio: widget.gridAspectRatio, // Usar parámetro
                   ),
                   itemCount: silabasPorLetra.keys.length, // Número de letras
                   itemBuilder: (context, index) {
                     final letra = silabasPorLetra.keys.elementAt(index);
-                    return GestureDetector(
-                      onTap: () {
-                        widget.onLetterPressed(letra); // Seleccionar letra
+                    return Draggable<Map<String, dynamic>>(
+                      data: {
+                        'contenido': letra,
+                        'color': BlockColor.blue,
+                        'origen': 'teclado'
                       },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: BLOCK_BLUE, // Usar constante de color
-                          borderRadius: BorderRadius.circular(CONTAINER_BORDER_RADIUS),
-                        ),
-                        child: Center(
+                      feedback: Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: BLOCK_BLUE,
+                            borderRadius: BorderRadius.circular(CONTAINER_BORDER_RADIUS),
+                          ),
                           child: Text(
                             letra,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      child: GestureDetector(
+                        onTap: () {
+                          widget.onLetterPressed(letra);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: BLOCK_BLUE,
+                            borderRadius: BorderRadius.circular(CONTAINER_BORDER_RADIUS),
+                          ),
+                          child: Center(
+                            child: Text(
+                              letra,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -113,12 +144,12 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
         if (widget.letraSeleccionada.isNotEmpty)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0), // Fondo semi-transparente
+              color: Colors.black.withOpacity(0), // Fondo transparente
               child: Center(
                 child: Container(
                   width: screenWidth * KEYBOARD_WIDTH_FACTOR, // Usar constante
                   height: screenHeight * KEYBOARD_HEIGHT_FACTOR, // Usar constante
-                  margin: EdgeInsets.only(bottom: 16),
+                  margin: EdgeInsets.only(bottom: 15, top: 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(KEYBOARD_BORDER_RADIUS), // Usar constante
@@ -136,7 +167,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                       // Container para el título
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 16.0),
                         decoration: BoxDecoration(
                           color: Colors.blue,
                           borderRadius: BorderRadius.only(
@@ -144,15 +175,46 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                             topRight: Radius.circular(15),
                           ),
                         ),
-                        child: Center(
-                          child: Text(
-                            "Sílabas con ${widget.letraSeleccionada.toUpperCase()}",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Título a la izquierda
+                            Text(
+                              "Sílabas con ${widget.letraSeleccionada.toUpperCase()}",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
-                          ),
+                            // Botón de check a la derecha
+                            Row(
+                              children: [
+                                Text(
+                                  "Cerrar auto",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: BoxConstraints(),
+                                  icon: Icon(
+                                    _cerrarAutomaticamente ? Icons.check_box : Icons.check_box_outline_blank,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _cerrarAutomaticamente = !_cerrarAutomaticamente;
+                                      widget.onAutoCerrarChanged(_cerrarAutomaticamente); // Notificar el cambio
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       Expanded(
@@ -230,9 +292,9 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
 
                       // Botones inferiores - código modificado
                       Padding(
-                        padding: EdgeInsets.only(bottom: 12.0, top: 8.0), // Margen inferior y superior
+                        padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0), // Cambiar 12.0 a 8.0
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             _buildRoundedButton(
                               "Comunes",
@@ -246,18 +308,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                               buttonWidth,
                             ),
                             _buildRoundedButton(
-                              "Trabadas",
-                              _categoriaSeleccionada == "trabadas" ? Colors.blue : Colors.grey,
-                              () {
-                                setState(() {
-                                  _categoriaSeleccionada = "trabadas";
-                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                                });
-                              },
-                              buttonWidth,
-                            ),
-                            _buildRoundedButton(
-                              "Mixtas",
+                              "Mixtas", // Cambiado de posición
                               _categoriaSeleccionada == "mixtas" ? Colors.blue : Colors.grey,
                               () {
                                 setState(() {
@@ -268,7 +319,18 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                               buttonWidth,
                             ),
                             _buildRoundedButton(
-                              "Acentuadas",
+                              "Trabadas", // Cambiado de posición
+                              _categoriaSeleccionada == "trabadas" ? Colors.blue : Colors.grey,
+                              () {
+                                setState(() {
+                                  _categoriaSeleccionada = "trabadas";
+                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                });
+                              },
+                              buttonWidth,
+                            ),
+                            _buildRoundedButton(
+                              "Tíldes",
                               _modoAcentuado ? Colors.orange : Colors.grey,
                               () {
                                 setState(() {
@@ -281,7 +343,12 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                             _buildRoundedButton(
                               "",
                               Colors.red,
-                              widget.onClosePressed,
+                              () {
+                                setState(() {
+                                  _modoAcentuado = false; // Restablecer modo acentuado
+                                });
+                                widget.onClosePressed();
+                              },
                               buttonWidth,
                               icon: Icon(Icons.close, color: Colors.white),
                             ),
@@ -300,24 +367,27 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
 
   // Método para construir botones redondeados
   Widget _buildRoundedButton(String text, Color color, VoidCallback onPressed, double width, {Icon? icon}) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.0), // Espacio horizontal entre botones
+    return SizedBox(
+      width: width,
+      height: 50,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: BUTTON_PADDING_VERTICAL), // Usar constante
+          padding: EdgeInsets.symmetric(vertical: 8),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(BUTTON_BORDER_RADIUS), // Usar constante
+            borderRadius: BorderRadius.circular(BUTTON_BORDER_RADIUS),
           ),
-          fixedSize: Size(width - 8, 50), // Ancho ajustado para el margen
         ),
-        child: icon ?? Text(
-          text,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: BUTTON_TEXT_SIZE, // Usar constante
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: icon ?? Text(
+            text,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: BUTTON_TEXT_SIZE,
+            ),
           ),
         ),
       ),

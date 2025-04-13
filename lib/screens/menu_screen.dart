@@ -10,7 +10,7 @@ class MenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        title: 'Menú Principal',
+        
         onBackPressed: () {
           Navigator.pop(context); // Acción al presionar el botón de retroceso
         },
@@ -37,20 +37,6 @@ class MenuScreen extends StatelessWidget {
                 SizedBox(height: 20),
                 _buildBotonMetodo(
                   context,
-                  'Formando Palabras',
-                  Colors.deepOrange,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Metodo2Screen(),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(height: 20),
-                _buildBotonMetodo(
-                  context,
                   'Describe la Imagen',
                   Colors.teal,
                   () {
@@ -58,6 +44,20 @@ class MenuScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => Metodo3Screen(),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildBotonMetodo(
+                  context,
+                  'Formando Palabras',
+                  Colors.deepOrange,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Metodo2Screen(),
                       ),
                     );
                   },

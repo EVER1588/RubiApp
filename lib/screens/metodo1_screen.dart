@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/constants.dart'; // Importar las funciones globales
 import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
+import '../constants/state_manager.dart'; // Añadir esta importación
 
 class Metodo1Screen extends StatefulWidget {
   @override
@@ -8,6 +9,7 @@ class Metodo1Screen extends StatefulWidget {
 }
 
 class _Metodo1ScreenState extends State<Metodo1Screen> {
+  final StateManager stateManager = StateManager();
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
 
@@ -62,7 +64,28 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   @override
   void initState() {
     super.initState();
-    configurarFlutterTts(); // Configurar Flutter TTS al iniciar la pantalla
+    // Recuperar el estado guardado
+    _syllables = List.from(stateManager.syllablesM1);
+    _currentBlockIndex = stateManager.currentBlockIndexM1;
+    _activeLetters = Map.from(stateManager.activeLettersM1);
+
+    // Inicializar TTS
+    configurarFlutterTts();
+
+    // Si no hay estado previo, inicializar con valores por defecto
+    if (_syllables.isEmpty) {
+      _syllables = [''];
+      _resetActiveLetters();
+    }
+  }
+
+  @override
+  void dispose() {
+    // Guardar el estado actual antes de cerrar la pantalla
+    stateManager.syllablesM1 = List.from(_syllables);
+    stateManager.currentBlockIndexM1 = _currentBlockIndex;
+    stateManager.activeLettersM1 = Map.from(_activeLetters);
+    super.dispose();
   }
 
   // Reproduce el texto usando TTS
@@ -70,38 +93,74 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     await decirTexto(text); // Usar la función global
   }
 
-  // Agrega una letra al bloque actual y valida la sílaba
+  // Modificar el método _addLetter en _Metodo1ScreenState
   void _addLetter(String letter) async {
     if (!_activeLetters[letter]!) return; // Ignorar letras desactivadas
 
+    await _speak(letter); // Primero reproducir el sonido de la letra
+
     setState(() {
-      _syllables[_currentBlockIndex] += letter; // Agregar la letra al bloque actual
+      String newSyllable = _syllables[_currentBlockIndex] + letter;
+      _syllables[_currentBlockIndex] = newSyllable;
+
+      // Desactivar todas las letras primero
+      _activeLetters.updateAll((key, value) => false);
+
+      // Validación mejorada después de agregar una letra
+      if (newSyllable.length == 1) {
+        // Primera letra: habilitar solo las que pueden formar sílabas válidas
+        for (String validSyllable in _validSyllables) {
+          if (validSyllable.startsWith(newSyllable)) {
+            if (validSyllable.length > 1) {
+              String segundaLetra = validSyllable[1];
+              if (segundaLetra != letter) {
+                _activeLetters[segundaLetra] = true;
+              }
+            }
+          }
+        }
+      } else if (newSyllable.length >= 2) {
+        // Segunda letra o más: verificar posibles continuaciones
+        bool formasSilabaValida = false;
+        
+        // Verificar si la sílaba actual puede continuar
+        for (String validSyllable in _validSyllables) {
+          if (validSyllable.startsWith(newSyllable)) {
+            formasSilabaValida = true;
+            // Si la sílaba puede continuar, activar las letras que pueden seguir
+            if (validSyllable.length > newSyllable.length) {
+              String siguienteLetra = validSyllable[newSyllable.length];
+              _activeLetters[siguienteLetra] = true;
+            }
+          }
+        }
+
+        if (!formasSilabaValida) {
+          // Si no forma una sílaba válida, eliminar la última letra
+          _syllables[_currentBlockIndex] = newSyllable.substring(0, newSyllable.length - 1);
+          // Revalidar las letras disponibles para la sílaba anterior
+          String silabaAnterior = _syllables[_currentBlockIndex];
+          for (String validSyllable in _validSyllables) {
+            if (validSyllable.startsWith(silabaAnterior)) {
+              if (validSyllable.length > silabaAnterior.length) {
+                String siguienteLetra = validSyllable[silabaAnterior.length];
+                _activeLetters[siguienteLetra] = true;
+              }
+            }
+          }
+        } else if (_validSyllables.contains(newSyllable)) {
+          // Si forma una sílaba completa válida
+          _syllables[_currentBlockIndex] = newSyllable;
+          _moveToNextBlock();
+          _resetActiveLetters();
+          _speak(newSyllable);
+          
+          // Actualizar el contador global de sílabas
+          stateManager.actualizarContadores(nuevaSilaba: true);
+        }
+        // Si no es una sílaba completa pero es válida, las letras ya están actualizadas
+      }
     });
-
-    await _speak(letter); // Reproduce el sonido de la letra
-
-    // Validar y actualizar el estado del teclado
-    if (_syllables[_currentBlockIndex].length == 1) {
-      _updateActiveLetters(_syllables[_currentBlockIndex]);
-    } else if (_syllables[_currentBlockIndex].length >= 2) {
-      if (_validSyllables.contains(_syllables[_currentBlockIndex])) {
-        await _speak(_syllables[_currentBlockIndex]); // Reproduce la sílaba completa
-        _resetActiveLetters(); // Restaurar todas las letras después de formar una sílaba
-        _moveToNextBlock(); // Moverse al siguiente bloque
-      } else {
-        _updateActiveLetters(_syllables[_currentBlockIndex]);
-      }
-    }
-  }
-
-  // Actualiza las letras activas basadas en la primera o segunda letra seleccionada
-  void _updateActiveLetters(String currentSyllable) {
-    _activeLetters.updateAll((key, value) => false); // Desactivar todas las letras
-    for (String syllable in _validSyllables) {
-      if (syllable.startsWith(currentSyllable)) {
-        _activeLetters[syllable[currentSyllable.length]] = true; // Activar letras válidas
-      }
-    }
   }
 
   // Restaura todas las letras como activas
@@ -137,13 +196,22 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     _resetActiveLetters(); // Restaurar todas las letras
   }
 
+  // Agregar botón de reinicio en el CustomBar
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        title: 'Formar Sílabas',
+        
         onBackPressed: () {
-          Navigator.pop(context); // Acción al presionar el botón de retroceso
+          Navigator.pop(context);
+        },
+        onResetPressed: () {
+          setState(() {
+            stateManager.clearMetodo1State();
+            _syllables = [''];
+            _currentBlockIndex = 0;
+            _resetActiveLetters();
+          });
         },
       ),
       body: Column(
@@ -155,13 +223,20 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
               spacing: 8.0, // Espacio entre bloques
               children: _syllables.map((syllable) {
                 final isValid = _validSyllables.contains(syllable);
-                return Chip(
-                  label: Text(
-                    syllable.isNotEmpty ? syllable : '_',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                return GestureDetector( // Agregar GestureDetector
+                  onTap: () {
+                    if (syllable.isNotEmpty) {
+                      _speak(syllable); // Leer la sílaba al tocarla
+                    }
+                  },
+                  child: Chip(
+                    label: Text(
+                      syllable.isNotEmpty ? syllable : '_',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: isValid ? Colors.green : Colors.grey,
+                    labelStyle: TextStyle(color: Colors.white),
                   ),
-                  backgroundColor: isValid ? Colors.green : Colors.grey,
-                  labelStyle: TextStyle(color: Colors.white),
                 );
               }).toList(),
             ),
@@ -211,15 +286,22 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     return ElevatedButton(
       onPressed: _activeLetters[letter]! ? () => _addLetter(letter) : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: _activeLetters[letter]! ? Colors.blueAccent : Colors.grey,
+        // Cambiar el color basado en el estado activo/inactivo
+        backgroundColor: _activeLetters[letter]! ? Colors.blueAccent : Colors.grey[400],
         foregroundColor: Colors.white,
+        // Usar disabledBackgroundColor para el estado inactivo
+        disabledBackgroundColor: Colors.grey[400],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
       ),
       child: Text(
         letter,
-        style: TextStyle(fontSize: 24),
+        style: TextStyle(
+          fontSize: 24,
+          // El color del texto también debería cambiar
+          color: _activeLetters[letter]! ? Colors.white : Colors.grey[300],
+        ),
       ),
     );
   }

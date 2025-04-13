@@ -6,7 +6,7 @@ class Metodo3Screen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        title: 'Describe la Imagen',
+        
         onBackPressed: () {
           Navigator.pop(context); // Acción al presionar el botón de retroceso
         },

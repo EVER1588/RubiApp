@@ -95,7 +95,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        title: 'Configuración',
+        
         onBackPressed: () {
           Navigator.pop(context); // Acción al presionar el botón de retroceso
         },
