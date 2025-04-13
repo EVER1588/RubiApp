@@ -66,8 +66,9 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final keyboardWidth = screenWidth * KEYBOARD_WIDTH_FACTOR;
-    final buttonWidth = (keyboardWidth - (8 * 6)) / 5; // Cambiar 24 a 8
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final keyboardWidth = screenWidth * (isLandscape ? 0.45 : KEYBOARD_WIDTH_FACTOR);
+    final buttonWidth = (keyboardWidth - (8 * 6)) / 5;
 
     return Stack(
       children: [
@@ -147,9 +148,12 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
               color: Colors.black.withOpacity(0), // Fondo transparente
               child: Center(
                 child: Container(
-                  width: screenWidth * KEYBOARD_WIDTH_FACTOR, // Usar constante
-                  height: screenHeight * KEYBOARD_HEIGHT_FACTOR, // Usar constante
-                  margin: EdgeInsets.only(bottom: 15, top: 4),
+                  width: isLandscape ? screenWidth * 0.45 : screenWidth * KEYBOARD_WIDTH_FACTOR,
+                  height: isLandscape ? screenHeight * 0.95 : screenHeight * KEYBOARD_HEIGHT_FACTOR,
+                  margin: EdgeInsets.only(
+                    bottom: 15,
+                    top: isLandscape ? 0 : 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(KEYBOARD_BORDER_RADIUS), // Usar constante
@@ -218,39 +222,57 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                         ),
                       ),
                       Expanded(
-                        child: Stack(
+                        child: Column( // Cambiar Stack por Column
                           children: [
                             // Grid de sílabas
-                            Container(
-                              height: screenHeight * 0.45, // Reducido de 0.5 a 0.45
-                              child: GridView.builder(
-                                padding: EdgeInsets.all(8),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 5,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 1.6, // Relación de aspecto ajustada
-                                ),
-                                itemCount: _silabasActuales.length,
-                                itemBuilder: (context, index) {
-                                  final silaba = _silabasActuales[index];
-                                  final esPalabraValida = silabasEspeciales.contains(silaba.toUpperCase());
-                                  
-                                  return GestureDetector(
-                                    onTap: () {
-                                      flutterTts.speak(silaba); // Leer la sílaba
-                                    },
-                                    child: Draggable<Map<String, dynamic>>(
-                                      // Aquí es donde modificamos el data para incluir el color adecuado
-                                      data: {
-                                        'contenido': silaba,
-                                        'color': esPalabraValida ? BlockColor.green : BlockColor.blue,
+                            Expanded( // Envolver el Container en un Expanded
+                              child: Container(
+                                child: GridView.builder(
+                                  padding: EdgeInsets.all(8),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 5,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                    childAspectRatio: isLandscape ? 1.8 : 1.6, // Ajustar aspecto en modo horizontal
+                                  ),
+                                  itemCount: _silabasActuales.length,
+                                  itemBuilder: (context, index) {
+                                    final silaba = _silabasActuales[index];
+                                    final esPalabraValida = silabasEspeciales.contains(silaba.toUpperCase());
+                                    
+                                    return GestureDetector(
+                                      onTap: () {
+                                        flutterTts.speak(silaba); // Leer la sílaba
                                       },
-                                      feedback: Material(
+                                      child: Draggable<Map<String, dynamic>>(
+                                        // Aquí es donde modificamos el data para incluir el color adecuado
+                                        data: {
+                                          'contenido': silaba,
+                                          'color': esPalabraValida ? BlockColor.green : BlockColor.blue,
+                                        },
+                                        feedback: Material(
+                                          child: Container(
+                                            padding: EdgeInsets.all(18),
+                                            decoration: BoxDecoration(
+                                              color: esPalabraValida ? Colors.green.shade700 : Colors.blue.shade700,
+                                              borderRadius: BorderRadius.circular(15),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                silaba,
+                                                style: TextStyle(
+                                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                         child: Container(
-                                          padding: EdgeInsets.all(18),
+                                          padding: EdgeInsets.all(6),
                                           decoration: BoxDecoration(
-                                            color: esPalabraValida ? Colors.green.shade700 : Colors.blue.shade700,
+                                            color: esPalabraValida ? Colors.green : Colors.blue,
                                             borderRadius: BorderRadius.circular(15),
                                           ),
                                           child: Center(
@@ -258,99 +280,99 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                               silaba,
                                               style: TextStyle(
                                                 color: const Color.fromARGB(255, 255, 255, 255),
-                                                fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                      child: Container(
-                                        padding: EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: esPalabraValida ? Colors.green : Colors.blue,
-                                          borderRadius: BorderRadius.circular(15),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            silaba,
-                                            style: TextStyle(
-                                              color: const Color.fromARGB(255, 255, 255, 255),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                    );
+                                  },
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
 
-                      // Botones inferiores - código modificado
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0), // Cambiar 12.0 a 8.0
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildRoundedButton(
-                              "Comunes",
-                              _categoriaSeleccionada == "comunes" ? Colors.blue : Colors.grey,
-                              () {
-                                setState(() {
-                                  _categoriaSeleccionada = "comunes";
-                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                                });
-                              },
-                              buttonWidth,
-                            ),
-                            _buildRoundedButton(
-                              "Mixtas", // Cambiado de posición
-                              _categoriaSeleccionada == "mixtas" ? Colors.blue : Colors.grey,
-                              () {
-                                setState(() {
-                                  _categoriaSeleccionada = "mixtas";
-                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                                });
-                              },
-                              buttonWidth,
-                            ),
-                            _buildRoundedButton(
-                              "Trabadas", // Cambiado de posición
-                              _categoriaSeleccionada == "trabadas" ? Colors.blue : Colors.grey,
-                              () {
-                                setState(() {
-                                  _categoriaSeleccionada = "trabadas";
-                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                                });
-                              },
-                              buttonWidth,
-                            ),
-                            _buildRoundedButton(
-                              "Tíldes",
-                              _modoAcentuado ? Colors.orange : Colors.grey,
-                              () {
-                                setState(() {
-                                  _modoAcentuado = !_modoAcentuado; // Activar o desactivar el modo acentuado
-                                  _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
-                                });
-                              },
-                              buttonWidth,
-                            ),
-                            _buildRoundedButton(
-                              "",
-                              Colors.red,
-                              () {
-                                setState(() {
-                                  _modoAcentuado = false; // Restablecer modo acentuado
-                                });
-                                widget.onClosePressed();
-                              },
-                              buttonWidth,
-                              icon: Icon(Icons.close, color: Colors.white),
+                            // Botones inferiores
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(KEYBOARD_BORDER_RADIUS),
+                                  bottomRight: Radius.circular(KEYBOARD_BORDER_RADIUS),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: isLandscape ? 4.0 : 8.0
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildRoundedButton(
+                                      "Comunes",
+                                      _categoriaSeleccionada == "comunes" ? Colors.blue : Colors.grey,
+                                      () {
+                                        setState(() {
+                                          _categoriaSeleccionada = "comunes";
+                                          _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                        });
+                                      },
+                                      buttonWidth,
+                                      height: isLandscape ? 40 : 50, // Ajustar altura en modo horizontal
+                                    ),
+                                    _buildRoundedButton(
+                                      "Mixtas", // Cambiado de posición
+                                      _categoriaSeleccionada == "mixtas" ? Colors.blue : Colors.grey,
+                                      () {
+                                        setState(() {
+                                          _categoriaSeleccionada = "mixtas";
+                                          _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                        });
+                                      },
+                                      buttonWidth,
+                                      height: isLandscape ? 40 : 50, // Ajustar altura en modo horizontal
+                                    ),
+                                    _buildRoundedButton(
+                                      "Trabadas", // Cambiado de posición
+                                      _categoriaSeleccionada == "trabadas" ? Colors.blue : Colors.grey,
+                                      () {
+                                        setState(() {
+                                          _categoriaSeleccionada = "trabadas";
+                                          _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                        });
+                                      },
+                                      buttonWidth,
+                                      height: isLandscape ? 40 : 50, // Ajustar altura en modo horizontal
+                                    ),
+                                    _buildRoundedButton(
+                                      "Tíldes",
+                                      _modoAcentuado ? Colors.orange : Colors.grey,
+                                      () {
+                                        setState(() {
+                                          _modoAcentuado = !_modoAcentuado; // Activar o desactivar el modo acentuado
+                                          _actualizarSilabas(widget.letraSeleccionada, _categoriaSeleccionada);
+                                        });
+                                      },
+                                      buttonWidth,
+                                      height: isLandscape ? 40 : 50, // Ajustar altura en modo horizontal
+                                    ),
+                                    _buildRoundedButton(
+                                      "",
+                                      Colors.red,
+                                      () {
+                                        setState(() {
+                                          _modoAcentuado = false; // Restablecer modo acentuado
+                                        });
+                                        widget.onClosePressed();
+                                      },
+                                      buttonWidth,
+                                      height: isLandscape ? 40 : 50, // Ajustar altura en modo horizontal
+                                      icon: Icon(Icons.close, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -366,16 +388,16 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
   }
 
   // Método para construir botones redondeados
-  Widget _buildRoundedButton(String text, Color color, VoidCallback onPressed, double width, {Icon? icon}) {
+  Widget _buildRoundedButton(String text, Color color, VoidCallback onPressed, double width, {Icon? icon, double? height}) {
     return SizedBox(
       width: width,
-      height: 50,
+      height: height ?? 50, // Usar altura proporcionada o 50 por defecto
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: height == null ? 8 : 4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(BUTTON_BORDER_RADIUS),
           ),
@@ -386,7 +408,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
             text,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: BUTTON_TEXT_SIZE,
+              fontSize: height == null ? BUTTON_TEXT_SIZE : BUTTON_TEXT_SIZE - 2,
             ),
           ),
         ),

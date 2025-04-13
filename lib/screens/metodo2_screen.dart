@@ -84,18 +84,18 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
             children: [
               // Contenedores a la izquierda
               Expanded(
-                flex: 50,
+                flex: 48,
                 child: Column(
                   children: [
                     Expanded(
-                      flex: 30,
+                      flex: 50, // Aumentar de 30 a 40 para dar más espacio al contenedor 1
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 8.0), // Agregar padding inferior
                         child: _buildContenedor1(screenWidth, screenHeight),
                       ),
                     ),
                     Expanded(
-                      flex: 70,
+                      flex: 90, // Reducir de 70 a 60 para quitar espacio al contenedor 2
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 16.0), // Agregar padding inferior
                         child: _buildContenedor2(screenWidth, screenHeight),
@@ -132,11 +132,17 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   }
 
   Widget _buildContenedor1(double screenWidth, double screenHeight) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    // Calcular el máximo de bloques según la orientación
+    final maxBloques = isLandscape 
+      ? ((screenWidth * 0.45) ~/ 80) * 2  // Para modo horizontal (2 filas)
+      : ((screenWidth * 0.98) ~/ 80) * 2; // Para modo vertical (2 filas)
+
     return Stack(
       children: [
         DragTarget<Map<String, dynamic>>(
           onWillAccept: (data) {
-            int maxBloques = ((screenWidth * 0.98) ~/ 80) * 2;
+            // Comprobar límite de bloques
             if (bloquesContenedor1.length >= maxBloques && data?['origen'] != 'contenedor1') {
               return false;
             }
@@ -170,11 +176,11 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
           },
           builder: (context, candidateData, rejectedData) {
             return Container(
-              width: screenWidth * 0.98,
+              width: isLandscape ? screenWidth * 0.45 : screenWidth * 0.98,
               margin: EdgeInsets.only(
                 top: 10,
-                left: screenWidth * 0.02,
-                right: screenWidth * 0.02,
+                left: isLandscape ? screenWidth * 0.01 : screenWidth * 0.02,
+                right: isLandscape ? screenWidth * 0.01 : screenWidth * 0.02,
                 bottom: 0,
               ),
               height: CONTAINER_1_HEIGHT,
@@ -197,10 +203,11 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
-                        width: screenWidth * 0.95,
+                        width: isLandscape ? screenWidth * 0.43 : screenWidth * 0.95,
                         child: Wrap(
                           spacing: 8.0,
-                          runSpacing: 4.0,
+                          runSpacing: 8.0, // Aumentar el espacio vertical entre filas
+                          alignment: WrapAlignment.start,
                           children: [
                             Chip(
                               label: GestureDetector(
@@ -308,7 +315,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                       ),
                     ),
                   ),
-                  if (bloquesContenedor1.length >= ((screenWidth * 0.98) ~/ 80) * 2 - 1)
+                  if (bloquesContenedor1.length >= maxBloques - 1)
                     Positioned(
                       right: 8,
                       top: 8,
@@ -335,6 +342,8 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   }
 
   Widget _buildContenedor2(double screenWidth, double screenHeight) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Container(
       padding: EdgeInsets.only(top: 0),
       child: Stack(
@@ -482,9 +491,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               );
             },
           ),
+          // Botón de borrar (rojo)
           Positioned(
-            bottom: 5,
-            right: 13,
+            bottom: isLandscape ? 5 : 5, // Ajustar posición vertical en modo horizontal
+            right: isLandscape ? 23 : 13, // Ajustar posición horizontal en modo horizontal
             child: DragTarget<Map<String, dynamic>>(
               onWillAccept: (data) => true,
               onAccept: (data) {
@@ -515,9 +525,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               },
             ),
           ),
+          // Botón de limpiar (naranja)
           Positioned(
-            bottom: 5,
-            right: 85,
+            bottom: isLandscape ? 5 : 5, // Ajustar posición vertical en modo horizontal
+            right: isLandscape ? 98 : 85, // Ajustar posición horizontal en modo horizontal
             child: Container(
               width: 40,
               height: 40,
