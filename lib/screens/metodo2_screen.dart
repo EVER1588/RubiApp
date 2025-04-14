@@ -79,55 +79,68 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
           Navigator.pop(context);
         },
       ),
-      body: isLandscape 
-        ? Row( // Layout horizontal
-            children: [
-              // Contenedores a la izquierda
-              Expanded(
-                flex: 48,
-                child: Column(
-                  children: [
-                    Expanded(
-                      flex: 50, // Aumentar de 30 a 40 para dar más espacio al contenedor 1
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 8.0), // Agregar padding inferior
-                        child: _buildContenedor1(screenWidth, screenHeight),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 90, // Reducir de 70 a 60 para quitar espacio al contenedor 2
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 16.0), // Agregar padding inferior
-                        child: _buildContenedor2(screenWidth, screenHeight),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Teclados a la derecha
-              Expanded(
-                flex: 50,
-                child: _buildTeclados(screenWidth, screenHeight),
-              ),
-            ],
-          )
-        : Column( // Layout vertical (original)
-            children: [
-              Expanded(
-                flex: 15,
-                child: _buildContenedor1(screenWidth, screenHeight),
-              ),
-              SizedBox(height: 8),
-              Expanded(
-                flex: 36,
-                child: _buildContenedor2(screenWidth, screenHeight),
-              ),
-              Expanded(
-                flex: 56,
-                child: _buildTeclados(screenWidth, screenHeight),
-              ),
-            ],
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+              isLandscape 
+                ? 'lib/utils/images/metodo3-por_defecto-horizontal.png'
+                : 'lib/utils/images/metodo3-por_defecto-vertical.png'
+            ),
+            fit: BoxFit.cover,
+            opacity: 0.8, // Aumentar de 0.2 a 0.5 (50% de opacidad)
           ),
+        ),
+        child: isLandscape 
+          ? Row( // Layout horizontal
+              children: [
+                // Contenedores a la izquierda
+                Expanded(
+                  flex: 48,
+                  child: Column(
+                    children: [
+                      Expanded(
+                        flex: 50, // Aumentar de 30 a 40 para dar más espacio al contenedor 1
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 8.0), // Agregar padding inferior
+                          child: _buildContenedor1(screenWidth, screenHeight),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 90, // Reducir de 70 a 60 para quitar espacio al contenedor 2
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 16.0), // Agregar padding inferior
+                          child: _buildContenedor2(screenWidth, screenHeight),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Teclados a la derecha
+                Expanded(
+                  flex: 50,
+                  child: _buildTeclados(screenWidth, screenHeight),
+                ),
+              ],
+            )
+          : Column( // Layout vertical (original)
+              children: [
+                Expanded(
+                  flex: 15,
+                  child: _buildContenedor1(screenWidth, screenHeight),
+                ),
+                SizedBox(height: 8),
+                Expanded(
+                  flex: 36,
+                  child: _buildContenedor2(screenWidth, screenHeight),
+                ),
+                Expanded(
+                  flex: 56,
+                  child: _buildTeclados(screenWidth, screenHeight),
+                ),
+              ],
+            ),
+      ),
     );
   }
 
@@ -185,7 +198,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               ),
               height: CONTAINER_1_HEIGHT,
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 171, 207, 255),
+                color: const Color.fromARGB(255, 171, 207, 255).withOpacity(0.8), // Ajustar opacidad
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
@@ -209,20 +222,24 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                           runSpacing: 8.0, // Aumentar el espacio vertical entre filas
                           alignment: WrapAlignment.start,
                           children: [
-                            Chip(
-                              label: GestureDetector(
-                                onTap: () async {
-                                  final texto = bloquesContenedor1.map((b) => b['texto']).join(' ');
-                                  if (texto.isNotEmpty) {
-                                    await flutterTts.speak(texto);
-                                  }
-                                },
-                                child: Icon(
+                            GestureDetector(
+                              onTap: () async {
+                                final texto = bloquesContenedor1.map((b) => b['texto']).join(' ');
+                                if (texto.isNotEmpty) {
+                                  await flutterTts.speak(texto);
+                                }
+                              },
+                              child: Chip(
+                                label: Text(''), // Placeholder para mantener el tamaño del Chip
+                                avatar: Icon(
                                   Icons.play_arrow,
-                                  color: Colors.white,
+                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                  size: 24.0, // Ajustar tamaño del icono
                                 ),
+                                labelPadding: EdgeInsets.all(0), // Reducir padding para que el icono ocupe más espacio
+                                padding: EdgeInsets.all(8.0), // Ajustar padding del Chip
+                                backgroundColor: const Color.fromARGB(255, 63, 186, 243),
                               ),
-                              backgroundColor: Colors.green,
                             ),
                             ...bloquesContenedor1.map((bloque) {
                               return GestureDetector(
@@ -281,9 +298,14 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                           bloque['texto'],
                                           style: TextStyle(fontSize: 16, color: Colors.white),
                                         ),
-                                        backgroundColor: candidateData != null && candidateData.isNotEmpty
-                                            ? Colors.green.shade300  
-                                            : Colors.green,
+                                        backgroundColor: Colors.green,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8.0), // Reducir el radio de 15 a 8
+                                          side: BorderSide(
+                                            color: Colors.black,
+                                            width: 2.0,
+                                          ),
+                                        ),
                                       ),
                                     );
                                   },
@@ -384,7 +406,7 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green[100],
+                  color: Colors.green[100]?.withOpacity(0.8), // Ajustar opacidad
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
@@ -478,6 +500,13 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                       style: TextStyle(fontSize: 16, color: Colors.white),
                                     ),
                                     backgroundColor: _getColor(coloresBloques[bloque['texto']]),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.0), // Reducir el radio de 15 a 8
+                                      side: BorderSide(
+                                        color: Colors.black,
+                                        width: 2.0,
+                                      ),
+                                    ),
                                   ),
                                 );
                               },
@@ -555,8 +584,18 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   Widget _buildTeclados(double screenWidth, double screenHeight) {
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     
+    // Calcular aspect ratio dinámicamente
+    double calculatedAspectRatio;
+    if (isLandscape) {
+      final availableWidth = screenWidth * 0.5; // 50% del ancho en modo horizontal
+      final blockSize = (availableWidth - (6 * BLOCK_SPACING)) / 5; // 5 bloques por fila
+      calculatedAspectRatio = blockSize / (blockSize * 0.6); // altura es 80% del ancho
+    } else {
+      calculatedAspectRatio = KEYBOARD_GRID_ASPECT_RATIO; // Mantener ratio original en vertical
+    }
+    
     return Metodo2Teclado(
-      gridAspectRatio: isLandscape ? 1.55 : KEYBOARD_GRID_ASPECT_RATIO, // Hacer bloques más rectangulares en horizontal
+      gridAspectRatio: calculatedAspectRatio,
       onLetterPressed: (letra) async {
         decirTexto(letra);
         await Future.delayed(Duration(milliseconds: 10));

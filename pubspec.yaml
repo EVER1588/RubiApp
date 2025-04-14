@@ -22,10 +22,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
-  # Si tienes imágenes o assets, descomenta y configura esta sección
-  # assets:
-  #   - assets/images/
-  #   - assets/sounds/
+  assets:
+    - lib/utils/images/
 
   # Si usas fuentes personalizadas, descomenta y configura esta sección
   # fonts:

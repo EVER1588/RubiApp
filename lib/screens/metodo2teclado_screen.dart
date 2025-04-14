@@ -118,8 +118,12 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: BLOCK_BLUE,
+                            color: const Color.fromARGB(255, 0, 129, 235),
                             borderRadius: BorderRadius.circular(CONTAINER_BORDER_RADIUS),
+                            border: Border.all(  // Agregar el contorno negro
+                              color: Colors.black,
+                              width: 2.0,
+                            ),
                           ),
                           child: Center(
                             child: Text(
@@ -256,6 +260,10 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                             decoration: BoxDecoration(
                                               color: esPalabraValida ? Colors.green.shade700 : Colors.blue.shade700,
                                               borderRadius: BorderRadius.circular(15),
+                                              border: Border.all(  // Agregar el borde negro
+                                                color: Colors.black,
+                                                width: 2.0,
+                                              ),
                                             ),
                                             child: Center(
                                               child: Text(
@@ -274,6 +282,10 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                           decoration: BoxDecoration(
                                             color: esPalabraValida ? Colors.green : Colors.blue,
                                             borderRadius: BorderRadius.circular(15),
+                                            border: Border.all(  // Agregar el borde negro
+                                              color: Colors.black,
+                                              width: 2.0,
+                                            ),
                                           ),
                                           child: Center(
                                             child: Text(

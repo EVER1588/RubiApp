@@ -61,65 +61,79 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
 
   void _mostrarInformacion(BuildContext context) {
     final stateManager = StateManager();
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Estadísticas', 
-            style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold)
+          title: Stack(
+            children: [
+              Text('Estadísticas', 
+                style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold)
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: Icon(Icons.close, color: Colors.blue[700]),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildEstadisticaItem(
-                'Palabras Únicas:',
-                stateManager.palabrasUnicas.length.toString(),
-                Icons.auto_stories,
+          content: SingleChildScrollView(
+            child: Container(
+              width: isLandscape ? 400 : 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildEstadisticaItem(
+                    'Palabras Descubiertas:',
+                    stateManager.palabrasUnicas.length.toString(),
+                    Icons.auto_stories,
+                  ),
+                  SizedBox(height: 12),
+                  _buildEstadisticaItem(
+                    'Palabras Utilizadas:',
+                    stateManager.totalPalabrasUsadas.toString(),
+                    Icons.library_books,
+                  ),
+                  SizedBox(height: 12),
+                  _buildEstadisticaItem(
+                    'Sílabas Utilizadas:',
+                    stateManager.totalSilabasUsadas.toString(),
+                    Icons.short_text,
+                  ),
+                  SizedBox(height: 20),
+                  Text('Logros Desbloqueados:', 
+                    style: TextStyle(fontWeight: FontWeight.bold)
+                  ),
+                  _buildLogro(
+                    'Primera Palabra',
+                    stateManager.logrosDesbloqueados['primera_palabra'] ?? false,
+                  ),
+                  _buildLogro(
+                    '10 Palabras Descubiertas',
+                    stateManager.logrosDesbloqueados['diez_palabras'] ?? false,
+                  ),
+                  _buildLogro(
+                    'Primera Sílaba',
+                    stateManager.logrosDesbloqueados['primera_silaba'] ?? false,
+                  ),
+                  _buildLogro(
+                    '50 Sílabas Utilizadas',
+                    stateManager.logrosDesbloqueados['cincuenta_silabas'] ?? false,
+                  ),
+                ],
               ),
-              SizedBox(height: 12),
-              _buildEstadisticaItem(
-                'Total Palabras:',
-                stateManager.totalPalabrasUsadas.toString(),
-                Icons.library_books,
-              ),
-              SizedBox(height: 12),
-              _buildEstadisticaItem(
-                'Sílabas Utilizadas:',
-                stateManager.totalSilabasUsadas.toString(),
-                Icons.short_text,
-              ),
-              SizedBox(height: 20),
-              Text('Logros Desbloqueados:', 
-                style: TextStyle(fontWeight: FontWeight.bold)
-              ),
-              _buildLogro(
-                'Primera Palabra',
-                stateManager.logrosDesbloqueados['primera_palabra'] ?? false,
-              ),
-              _buildLogro(
-                '10 Palabras Descubiertas',
-                stateManager.logrosDesbloqueados['diez_palabras'] ?? false,
-              ),
-              _buildLogro(
-                'Primera Sílaba',
-                stateManager.logrosDesbloqueados['primera_silaba'] ?? false,
-              ),
-              _buildLogro(
-                '50 Sílabas Utilizadas',
-                stateManager.logrosDesbloqueados['cincuenta_silabas'] ?? false,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text('Cerrar'),
-              onPressed: () => Navigator.of(context).pop(),
             ),
-          ],
+          ),
+          actions: [],
         );
       },
     );
