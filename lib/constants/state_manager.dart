@@ -17,6 +17,7 @@ class StateManager {
   // Estado para Método 1 (Aprende Sílabas)
   List<String> syllablesM1 = [''];
   int currentBlockIndexM1 = 0;
+  Set<String> silabasUsadas = {}; // Agregar esta línea
   Map<String, bool> activeLettersM1 = {
     'A': true, 'B': true, 'C': true, 'D': true, 'E': true, 'F': true, 'G': true,
     'H': true, 'I': true, 'J': true, 'K': true, 'L': true, 'M': true, 'N': true,
@@ -134,4 +135,36 @@ class StateManager {
 
   // Getter para el total de palabras únicas
   int get totalPalabrasDescubiertas => palabrasUnicas.length;
+
+  Future<void> loadSavedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Cargar datos guardados de Método 1
+      palabrasUnicas = Set<String>.from(prefs.getStringList('palabrasUnicas') ?? []);
+      silabasUsadas = Set<String>.from(prefs.getStringList('silabasUsadas') ?? []);
+      
+      // Cargar datos guardados de Método 2
+      bloquesContenedor1M2 = List<Map<String, dynamic>>.from(
+        (prefs.getStringList('bloquesContenedor1M2') ?? []).map((e) => Map<String, dynamic>.from({
+          'id': e.split('|')[0],
+          'texto': e.split('|')[1],
+        }))
+      );
+      
+      bloquesContenedor2M2 = List<Map<String, dynamic>>.from(
+        (prefs.getStringList('bloquesContenedor2M2') ?? []).map((e) => Map<String, dynamic>.from({
+          'id': e.split('|')[0],
+          'texto': e.split('|')[1],
+        }))
+      );
+      
+      // Cargar configuraciones
+      letraSeleccionadaM2 = prefs.getString('letraSeleccionadaM2') ?? '';
+      cerrarAutomaticamenteM2 = prefs.getBool('cerrarAutomaticamenteM2') ?? true;
+
+    } catch (e) {
+      print('Error cargando datos guardados: $e');
+    }
+  }
 }

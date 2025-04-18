@@ -8,14 +8,25 @@ import 'package:uuid/uuid.dart'; // Importar la biblioteca uuid
 import 'dart:math'; // Importar la biblioteca math para generar números aleatorios
 import '../constants/state_manager.dart';
 
-class Metodo2Screen extends StatefulWidget {
-  const Metodo2Screen({Key? key}) : super(key: key);
 
+class Metodo2Screen extends StatefulWidget {
   @override
   _Metodo2ScreenState createState() => _Metodo2ScreenState();
 }
 
 class _Metodo2ScreenState extends State<Metodo2Screen> {
+  @override
+  Widget build(BuildContext context) {
+    return _Metodo2ScreenContent();
+  }
+}
+
+class _Metodo2ScreenContent extends StatefulWidget {
+  @override
+  _Metodo2ScreenContentState createState() => _Metodo2ScreenContentState();
+}
+
+class _Metodo2ScreenContentState extends State<_Metodo2ScreenContent> {
   final FlutterTts flutterTts = FlutterTts(); // Instancia de Flutter TTS
   final StateManager stateManager = StateManager();
   String _letraSeleccionada = "";
@@ -184,7 +195,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   'texto': bloque,
                 });
               }
-              _letraSeleccionada = "";
+              // Solo cerrar el teclado si _cerrarAutomaticamente es true
+              if (_cerrarAutomaticamente) {
+                _letraSeleccionada = "";
+              }
             });
           },
           builder: (context, candidateData, rejectedData) {
@@ -218,8 +232,8 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                       child: Container(
                         width: isLandscape ? screenWidth * 0.43 : screenWidth * 0.95,
                         child: Wrap(
-                          spacing: 8.0,
-                          runSpacing: 8.0, // Aumentar el espacio vertical entre filas
+                          spacing: CHIP_SPACING,
+                          runSpacing: CHIP_RUN_SPACING,
                           alignment: WrapAlignment.start,
                           children: [
                             GestureDetector(
@@ -229,16 +243,24 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                   await flutterTts.speak(texto);
                                 }
                               },
-                              child: Chip(
-                                label: Text(''), // Placeholder para mantener el tamaño del Chip
-                                avatar: Icon(
-                                  Icons.play_arrow,
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                  size: 24.0, // Ajustar tamaño del icono
+                              child: Container(
+                                width: ROUND_BUTTON_SIZE,
+                                height: ROUND_BUTTON_SIZE,
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(255, 63, 186, 243),
+                                  borderRadius: BorderRadius.circular(ROUND_BUTTON_BORDER_RADIUS),
+                                  border: Border.all(
+                                    color: Colors.black.withOpacity(0.3), // Agregar transparencia al borde
+                                    width: ROUND_BUTTON_BORDER_WIDTH,
+                                  ),
                                 ),
-                                labelPadding: EdgeInsets.all(0), // Reducir padding para que el icono ocupe más espacio
-                                padding: EdgeInsets.all(8.0), // Ajustar padding del Chip
-                                backgroundColor: const Color.fromARGB(255, 63, 186, 243),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: ROUND_BUTTON_ICON_SIZE,
+                                  ),
+                                ),
                               ),
                             ),
                             ...bloquesContenedor1.map((bloque) {
@@ -278,8 +300,13 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                         child: Chip(
                                           label: Text(
                                             bloque['texto'],
-                                            style: TextStyle(fontSize: 16, color: Colors.white),
+                                            style: TextStyle(fontSize: CHIP_FONT_SIZE, color: Colors.white),
                                           ),
+                                          labelPadding: EdgeInsets.symmetric(
+                                            horizontal: CHIP_HORIZONTAL_PADDING,
+                                            vertical: CHIP_VERTICAL_PADDING,
+                                          ),
+                                          padding: EdgeInsets.all(CHIP_INTERNAL_PADDING),
                                           backgroundColor: Colors.green,
                                         ),
                                       ),
@@ -288,22 +315,32 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                         child: Chip(
                                           label: Text(
                                             bloque['texto'],
-                                            style: TextStyle(fontSize: 16, color: Colors.white),
+                                            style: TextStyle(fontSize: CHIP_FONT_SIZE, color: Colors.white),
                                           ),
+                                          labelPadding: EdgeInsets.symmetric(
+                                            horizontal: CHIP_HORIZONTAL_PADDING,
+                                            vertical: CHIP_VERTICAL_PADDING,
+                                          ),
+                                          padding: EdgeInsets.all(CHIP_INTERNAL_PADDING),
                                           backgroundColor: Colors.green,
                                         ),
                                       ),
                                       child: Chip(
                                         label: Text(
                                           bloque['texto'],
-                                          style: TextStyle(fontSize: 16, color: Colors.white),
+                                          style: TextStyle(fontSize: CHIP_FONT_SIZE, color: Colors.white),
                                         ),
+                                        labelPadding: EdgeInsets.symmetric(
+                                          horizontal: CHIP_HORIZONTAL_PADDING,
+                                          vertical: CHIP_VERTICAL_PADDING,
+                                        ),
+                                        padding: EdgeInsets.all(CHIP_INTERNAL_PADDING),
                                         backgroundColor: Colors.green,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8.0), // Reducir el radio de 15 a 8
+                                          borderRadius: BorderRadius.circular(CHIP_BORDER_RADIUS),
                                           side: BorderSide(
                                             color: Colors.black,
-                                            width: 2.0,
+                                            width: CHIP_BORDER_WIDTH,
                                           ),
                                         ),
                                       ),
@@ -320,20 +357,30 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   Positioned(
                     bottom: 5,
                     right: 5,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.cleaning_services, color: Colors.white),
-                        onPressed: () {
-                          setState(() {
-                            bloquesContenedor1.clear();
-                          });
-                        },
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          bloquesContenedor1.clear();
+                        });
+                      },
+                      child: Container(
+                        width: ROUND_BUTTON_SIZE,
+                        height: ROUND_BUTTON_SIZE,
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(ROUND_BUTTON_BORDER_RADIUS),
+                          border: Border.all(
+                            color: Colors.black.withOpacity(0.3), // Mismo valor de transparencia
+                            width: ROUND_BUTTON_BORDER_WIDTH,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.cleaning_services,
+                            color: Colors.white,
+                            size: ROUND_BUTTON_ICON_SIZE,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -371,14 +418,26 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       child: Stack(
         children: [
           DragTarget<Map<String, dynamic>>(
-            onWillAcceptWithDetails: (details) => true,
+            onWillAcceptWithDetails: (details) {
+              // Aceptar bloques de cualquier origen
+              return true;
+            },
             onAcceptWithDetails: (details) {
               setState(() {
                 final bloque = details.data['contenido']!;
                 final color = details.data['color'] ?? BlockColor.blue;
                 final id = details.data['id'];
                 final origen = details.data['origen'] ?? '';
-                if (origen == 'teclado' || origen == '') {
+
+                if (origen == 'contenedor1') {
+                  // Remover del contenedor 1 y agregar al contenedor 2
+                  bloquesContenedor1.removeWhere((b) => b['id'] == id);
+                  bloquesContenedor2.add({
+                    'id': uuid.v4(),
+                    'texto': bloque,
+                  });
+                  coloresBloques[bloque] = color;
+                } else if (origen == 'teclado' || origen == '') {
                   bloquesContenedor2.add({
                     'id': uuid.v4(),
                     'texto': bloque,
@@ -426,8 +485,8 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                     padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0, bottom: 8.0),
                     child: Wrap(
                       alignment: WrapAlignment.start,
-                      spacing: 8.0,
-                      runSpacing: 4.0,
+                      spacing: CHIP_SPACING,
+                      runSpacing: CHIP_RUN_SPACING,
                       children: bloquesContenedor2.map((bloque) {
                         return AnimatedContainer(
                           duration: Duration(milliseconds: 300),
@@ -479,8 +538,13 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                     child: Chip(
                                       label: Text(
                                         bloque['texto'],
-                                        style: TextStyle(fontSize: 16, color: Colors.white),
+                                        style: TextStyle(fontSize: CHIP_FONT_SIZE, color: Colors.white),
                                       ),
+                                      labelPadding: EdgeInsets.symmetric(
+                                        horizontal: CHIP_HORIZONTAL_PADDING,
+                                        vertical: CHIP_VERTICAL_PADDING,
+                                      ),
+                                      padding: EdgeInsets.all(CHIP_INTERNAL_PADDING),
                                       backgroundColor: _getColor(coloresBloques[bloque['texto']]),
                                     ),
                                   ),
@@ -489,22 +553,32 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                                     child: Chip(
                                       label: Text(
                                         bloque['texto'],
-                                        style: TextStyle(fontSize: 16, color: Colors.white),
+                                        style: TextStyle(fontSize: CHIP_FONT_SIZE, color: Colors.white),
                                       ),
+                                      labelPadding: EdgeInsets.symmetric(
+                                        horizontal: CHIP_HORIZONTAL_PADDING,
+                                        vertical: CHIP_VERTICAL_PADDING,
+                                      ),
+                                      padding: EdgeInsets.all(CHIP_INTERNAL_PADDING),
                                       backgroundColor: _getColor(coloresBloques[bloque['texto']]),
                                     ),
                                   ),
                                   child: Chip(
                                     label: Text(
                                       bloque['texto'],
-                                      style: TextStyle(fontSize: 16, color: Colors.white),
+                                      style: TextStyle(fontSize: CHIP_FONT_SIZE, color: Colors.white),
                                     ),
+                                    labelPadding: EdgeInsets.symmetric(
+                                      horizontal: CHIP_HORIZONTAL_PADDING,
+                                      vertical: CHIP_VERTICAL_PADDING,
+                                    ),
+                                    padding: EdgeInsets.all(CHIP_INTERNAL_PADDING),
                                     backgroundColor: _getColor(coloresBloques[bloque['texto']]),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0), // Reducir el radio de 15 a 8
+                                      borderRadius: BorderRadius.circular(CHIP_BORDER_RADIUS),
                                       side: BorderSide(
                                         color: Colors.black,
-                                        width: 2.0,
+                                        width: CHIP_BORDER_WIDTH,
                                       ),
                                     ),
                                   ),
@@ -522,8 +596,8 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
           ),
           // Botón de borrar (rojo)
           Positioned(
-            bottom: isLandscape ? 5 : 5, // Ajustar posición vertical en modo horizontal
-            right: isLandscape ? 23 : 13, // Ajustar posición horizontal en modo horizontal
+            bottom: isLandscape ? 5 : 5,
+            right: isLandscape ? 23 : 13,
             child: DragTarget<Map<String, dynamic>>(
               onWillAccept: (data) => true,
               onAccept: (data) {
@@ -540,15 +614,22 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
               },
               builder: (context, candidateData, rejectedData) {
                 return Container(
-                  width: 70,
-                  height: 70,
+                  width: DELETE_BUTTON_SIZE,
+                  height: DELETE_BUTTON_SIZE,
                   decoration: BoxDecoration(
                     color: Colors.red,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(ROUND_BUTTON_BORDER_RADIUS),
+                    border: Border.all(
+                      color: Colors.black.withOpacity(0.3),
+                      width: ROUND_BUTTON_BORDER_WIDTH,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.delete,
-                    color: Colors.white,
+                  child: Center(
+                    child: Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                      size: ROUND_BUTTON_ICON_SIZE,
+                    ),
                   ),
                 );
               },
@@ -556,23 +637,33 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
           ),
           // Botón de limpiar (naranja)
           Positioned(
-            bottom: isLandscape ? 5 : 5, // Ajustar posición vertical en modo horizontal
-            right: isLandscape ? 98 : 85, // Ajustar posición horizontal en modo horizontal
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: IconButton(
-                icon: Icon(Icons.cleaning_services, color: Colors.white),
-                onPressed: () {
-                  setState(() {
-                    bloquesContenedor2.clear();
-                    coloresBloques.clear();
-                  });
-                },
+            bottom: isLandscape ? 5 : 5,
+            right: isLandscape ? 98 : 85,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  bloquesContenedor2.clear();
+                  coloresBloques.clear();
+                });
+              },
+              child: Container(
+                width: ROUND_BUTTON_SIZE,
+                height: ROUND_BUTTON_SIZE,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(ROUND_BUTTON_BORDER_RADIUS),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.3),
+                    width: ROUND_BUTTON_BORDER_WIDTH,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.cleaning_services,
+                    color: Colors.white,
+                    size: ROUND_BUTTON_ICON_SIZE,
+                  ),
+                ),
               ),
             ),
           ),

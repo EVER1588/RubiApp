@@ -34,6 +34,27 @@ const Color BLOCK_BLUE = Colors.blue;
 const Color BLOCK_ORANGE = Colors.orange;
 const Color BLOCK_RED = Colors.red;
 
+// Constantes para los chips/bloques
+const double CHIP_FONT_SIZE = 16.0;
+const double CHIP_HORIZONTAL_PADDING = 8.0;
+const double CHIP_VERTICAL_PADDING = 2.0;
+const double CHIP_INTERNAL_PADDING = 4.0;
+const double CHIP_BORDER_RADIUS = 8.0;
+const double CHIP_BORDER_WIDTH = 2.0;
+
+// Constantes para el espaciado entre chips
+const double CHIP_SPACING = 8.0;
+const double CHIP_RUN_SPACING = 1.0;
+
+// Constantes para los botones circulares
+const double ROUND_BUTTON_SIZE = 40.0;
+const double ROUND_BUTTON_ICON_SIZE = 24.0;
+const double ROUND_BUTTON_BORDER_RADIUS = 20.0;
+const double ROUND_BUTTON_BORDER_WIDTH = 2.0;
+
+// Constante para el botón de borrar
+const double DELETE_BUTTON_SIZE = 70.0;
+
 // Instancia global de TTS y UUID
 final FlutterTts flutterTts = FlutterTts();
 final Uuid uuid = Uuid();
@@ -314,7 +335,7 @@ const List<String> palabrasValidas = [
   "COMERCIO", "INDUSTRIA", "EDUCACIÓN", "SALUD", "TECNOLOGÍA", "CONSTRUCCIÓN", "TRANSPORTE",
   "COMUNICACIÓN", "AGRICULTURA", "GANADERÍA", "PESCA", "MINERÍA", "ENERGÍA", "TURISMO",
   "FINANZAS", "BANCA", "SEGUROS", "INMOBILIARIA", "LEGAL", "MARKETING", "PUBLICIDAD",
-  "CONSULTORÍA", "LOGÍSTICA", "GOBIERNO", "ADMINISTRACIÓN", "DEFENSA", "SEGURIDAD",
+  "CONSULTORÍA", "LOGÍSTICA", "GOBIERNO", "ADMINISTRACIÓN", "DEFENSA", "SEGURIDAD", "TAMBIÉN",
 
 ];
 
@@ -329,7 +350,7 @@ const List<String> IniciosDePalabras = [
   // Combina los valores de iniciosDePalabras3Silabas e iniciosDePalabras4Silabas
   "ABA", "ABRA", "ABRI", "AGRE", "AGREGA", "AGU", "ÁGUI", "AHO", "ALMO", "ALMOHA", 
   "AMARI", "ANI","ARBUS", "ARDI", "ARE", "ARCO", "ARCOÍ", "ARMA", "ARRI", "ASIEN", 
-  "AZU", "AZÚ", "BALLE", "BICICLE", "BOTO", "BOSTE", "BUFAN", "CABA", "CALEN", 
+  "AZU", "AZÚ", "BALLE", "BICICLE", "BOTO", "BOSTE", "BUFAN", "CABA", "CALEN", "TAM", "TAMBI",
   "CALENDA", "CALI", "CALIEN", "CAMI", "CAMIO", "CANAS", "CANDA", "CARA", "CARACO", 
   "CARRE", "CARRETE", "CARRO", "CARTO", "CELES", "COCI", "COLCHO", "COLO", "COME", 
   "COMI", "CONTRO", "CORBA", "CORDI", "CORDILLE", "CORTI", "CUA", "CUADRA", "CUCHA", 

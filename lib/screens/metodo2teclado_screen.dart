@@ -307,10 +307,16 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                             // Botones inferiores
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: const Color.fromARGB(255, 231, 230, 191), // Fondo gris claro
                                 borderRadius: BorderRadius.only(
                                   bottomLeft: Radius.circular(KEYBOARD_BORDER_RADIUS),
                                   bottomRight: Radius.circular(KEYBOARD_BORDER_RADIUS),
+                                ),
+                                border: Border(
+                                  top: BorderSide(
+                                    color: Colors.black.withOpacity(0.3),
+                                    width: 2.0,
+                                  ),
                                 ),
                               ),
                               child: Padding(

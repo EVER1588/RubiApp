@@ -25,9 +25,25 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: onBackPressed,
+      leading: Container(
+        margin: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 22,
+          ),
+          padding: EdgeInsets.zero,
+          onPressed: onBackPressed,
+        ),
       ),
       actions: [
         if (score != null)

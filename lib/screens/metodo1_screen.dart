@@ -3,12 +3,21 @@ import '../constants/constants.dart'; // Importar las funciones globales
 import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 import '../constants/state_manager.dart'; // Añadir esta importación
 
-class Metodo1Screen extends StatefulWidget {
+class Metodo1Screen extends StatelessWidget {
   @override
-  _Metodo1ScreenState createState() => _Metodo1ScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _Metodo1ScreenContent(),
+    );
+  }
 }
 
-class _Metodo1ScreenState extends State<Metodo1Screen> {
+class _Metodo1ScreenContent extends StatefulWidget {
+  @override
+  _Metodo1ScreenContentState createState() => _Metodo1ScreenContentState();
+}
+
+class _Metodo1ScreenContentState extends State<_Metodo1ScreenContent> {
   final StateManager stateManager = StateManager();
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
