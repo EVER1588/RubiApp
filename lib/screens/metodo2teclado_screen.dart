@@ -118,12 +118,22 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 0, 129, 235),
+                            // Añadir transparencia al color de fondo (0.85 = 85% de opacidad)
+                            color: const Color.fromARGB(255, 0, 129, 235).withOpacity(0.85),
                             borderRadius: BorderRadius.circular(CONTAINER_BORDER_RADIUS),
-                            border: Border.all(  // Agregar el contorno negro
-                              color: Colors.black,
+                            border: Border.all(
+                              color: Colors.black.withOpacity(0.9), // También hacer el borde ligeramente transparente
                               width: 2.0,
                             ),
+                            // Opcional: añadir sombra para mejor efecto visual con transparencia
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Center(
                             child: Text(
@@ -280,19 +290,29 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                         child: Container(
                                           padding: EdgeInsets.all(6),
                                           decoration: BoxDecoration(
-                                            color: esPalabraValida ? Colors.green : Colors.blue,
+                                            // Usar el mismo color pero con transparencia
+                                            color: esPalabraValida 
+                                                ? Colors.green.withOpacity(0.85) 
+                                                : Colors.blue.withOpacity(0.85),
                                             borderRadius: BorderRadius.circular(15),
-                                            border: Border.all(  // Agregar el borde negro
+                                            border: Border.all(
                                               color: Colors.black,
                                               width: 2.0,
                                             ),
                                           ),
-                                          child: Center(
-                                            child: Text(
-                                              silaba,
-                                              style: TextStyle(
-                                                color: const Color.fromARGB(255, 255, 255, 255),
-                                                fontWeight: FontWeight.bold,
+                                          // Usar Align para garantizar centrado perfecto
+                                          child: Align(
+                                            alignment: Alignment.center,
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Text(
+                                                silaba,
+                                                textAlign: TextAlign.center, // Asegura que el texto esté centrado
+                                                style: TextStyle(
+                                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20, // Aumentar un poco más el tamaño de fuente
+                                                ),
                                               ),
                                             ),
                                           ),

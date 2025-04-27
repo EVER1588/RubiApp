@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.rubiapp2"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,25 +20,20 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.rubiapp2"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
-
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        
+        // Añadir soporte para múltiples arquitecturas
+        ndk {
+            abiFilters.add("armeabi-v7a")  // Para dispositivos Cortex-A53 (32-bit)
+            abiFilters.add("arm64-v8a")    // Para dispositivos Cortex-A76 (64-bit)
+            abiFilters.add("x86")          // Para emuladores x86
+            abiFilters.add("x86_64")       // Para emuladores x86_64
         }
     }
-}
 
-flutter {
-    source = "../.."
+    // Resto de la configuración...
 }

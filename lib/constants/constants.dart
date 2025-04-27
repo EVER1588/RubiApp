@@ -61,7 +61,7 @@ final Uuid uuid = Uuid();
 
 // Configurar Flutter TTS
 void configurarFlutterTts() async {
-  await flutterTts.setLanguage("es-ES");
+  await flutterTts.setLanguage("es-U S");
   await flutterTts.setPitch(1.0);
   await flutterTts.setSpeechRate(0.5);
   await flutterTts.awaitSpeakCompletion(true);
@@ -69,6 +69,7 @@ void configurarFlutterTts() async {
 
 // Función global para reproducir texto en voz alta
 Future<void> decirTexto(String texto) async {
+  // Reproducir el texto original sin acentuación artificial
   await flutterTts.speak(texto);
 }
 
@@ -233,7 +234,7 @@ const List<String> palabrasValidas = [
   "POLLO", "CARNE", "CERDO", "PESCADO", "ATÚN", "SALMÓN", "PAVO", "TERNERA",
   "CORDERO", "SALCHICHA", "SALCHICHAS", "JAMÓN", "TOCINO", "BISTEC", "FILETE", "FILETES",
   "LECHE", "QUESO", "QUESOS", "YOGUR", "YOGURES", "CREMA", "MANTEQUILLA", "HELADO", "HELADOS",
-  "ARROZ", "FRIJOL", "FRIJOLES", "LENTEJA", "LENTEJAS", "AVENA", "TRIGO",
+  "ARROZ", "FRIJOL", "FRIJOLES", "LENTEJA", "LENTEJAS", "AVENA", "TRIGO", "SOY",
   "PASTA", "PASTAS", "ESPAGUETI", "ESPAGUETIS", "CEREAL", "CEREALES", "GRANOLA",
   "PAN", "PANES", "HARINA", "GALLETA", "GALLETAS", "BIZCOCHO", "BIZCOCHOS", 
   "PASTEL", "PASTELES", "BOLLO", "BOLLOS", "PANQUÉ", "PANQUÉS", "SEIS", "SIETE", "OCHO", "NUEVE",
@@ -334,7 +335,7 @@ const List<String> palabrasValidas = [
   "FACTURACIÓN", "VENTA", "VENTAS", "COMPRA", "COMPRAS", "CLIENTE", "CLIENTES", "PROVEEDOR", "PROVEEDORES",
   "COMERCIO", "INDUSTRIA", "EDUCACIÓN", "SALUD", "TECNOLOGÍA", "CONSTRUCCIÓN", "TRANSPORTE",
   "COMUNICACIÓN", "AGRICULTURA", "GANADERÍA", "PESCA", "MINERÍA", "ENERGÍA", "TURISMO",
-  "FINANZAS", "BANCA", "SEGUROS", "INMOBILIARIA", "LEGAL", "MARKETING", "PUBLICIDAD",
+  "FINANZAS", "BANCA", "SEGURO", "SEGUROS", "INMOBILIARIA", "LEGAL", "MARKETING", "PUBLICIDAD",
   "CONSULTORÍA", "LOGÍSTICA", "GOBIERNO", "ADMINISTRACIÓN", "DEFENSA", "SEGURIDAD", "TAMBIÉN",
 
 ];
@@ -547,7 +548,7 @@ const Map<String, Map<String, List<String>>> silabasClasificadas = {
                "RAS", "RES", "RIS", "ROS", "RUS"],
   },
   "S": {
-    "comunes": ["SA", "SE", "SI", "SO", "SU"],
+    "comunes": ["SA", "SE", "SI", "SO", "SU", "SOY",],
     "trabadas": ["SLA", "SLE", "SLI", "SLO", "SLU"],
     "mixtas": ["SAL", "SEL", "SIL", "SOL", "SUL", "SAM", "SEM", "SIM", "SOM", "SUM", 
                "SAN", "SEN", "SIN", "SON", "SUN", "SAR", "SER", "SIR", "SOR", "SUR", 

@@ -1,46 +1,38 @@
 import 'package:flutter/material.dart';
-import '../constants/custombar_screen.dart';
-import '../categorias/animales_screen.dart';
 
-class Metodo3Screen extends StatefulWidget {
+class AnimalesScreen extends StatefulWidget {
   @override
-  _Metodo3ScreenState createState() => _Metodo3ScreenState();
+  _AnimalesScreenState createState() => _AnimalesScreenState();
 }
 
-class _Metodo3ScreenState extends State<Metodo3Screen> {
-  // Lista de categorías de imágenes con sus nombres y rutas corregidas
-  final List<Map<String, dynamic>> categorias = [
-    {"nombre": "Animales", "imagen": "lib/utils/images/animales.jpeg"},
-    {"nombre": "Frutas", "imagen": "lib/utils/images/frutas.jpeg"},
-    {"nombre": "Verduras", "imagen": "lib/utils/images/verduras.jpeg"},
-    {"nombre": "Colores", "imagen": "lib/utils/images/colores.jpeg"},
-    {"nombre": "Números", "imagen": "lib/utils/images/numeros.jpeg"},
-    {"nombre": "Familia", "imagen": "lib/utils/images/familia.jpeg"},
-    {"nombre": "Ropa", "imagen": "lib/utils/images/ropa.jpeg"},
-    {"nombre": "Transportes", "imagen": "lib/utils/images/transportes.jpeg"},
-    {"nombre": "Escuela", "imagen": "lib/utils/images/escuela.jpeg"},
-    {"nombre": "Cuerpo", "imagen": "lib/utils/images/cuerpo.jpeg"},
-    {"nombre": "Casa", "imagen": "lib/utils/images/casa.jpeg"},
-    {"nombre": "Estaciones", "imagen": "lib/utils/images/estaciones.jpeg"},
+class _AnimalesScreenState extends State<AnimalesScreen> {
+  // Lista de animales con sus nombres e imágenes
+  final List<Map<String, dynamic>> animales = [
+    {"nombre": "Perro", "imagen": "lib/utils/images/animales/perro.jpeg"},
+    {"nombre": "Gato", "imagen": "lib/utils/images/animales/gato.jpeg"},
+    {"nombre": "Vaca", "imagen": "lib/utils/images/animales/vaca.jpeg"},
+    {"nombre": "Caballo", "imagen": "lib/utils/images/animales/caballo.jpeg"},
+    {"nombre": "León", "imagen": "lib/utils/images/animales/leon.jpeg"},
+    {"nombre": "Elefante", "imagen": "lib/utils/images/animales/elefante.jpeg"},
+    {"nombre": "Jirafa", "imagen": "lib/utils/images/animales/jirafa.jpeg"},
+    {"nombre": "Mono", "imagen": "lib/utils/images/animales/mono.jpeg"},
+    {"nombre": "Pájaro", "imagen": "lib/utils/images/animales/pajaro.jpeg"},
+    {"nombre": "Pez", "imagen": "lib/utils/images/animales/pez.jpeg"},
+    {"nombre": "Tortuga", "imagen": "lib/utils/images/animales/tortuga.jpeg"},
+    {"nombre": "Conejo", "imagen": "lib/utils/images/animales/conejo.jpeg"},
   ];
 
-  void _navegarACategoria(String categoria) {
-    print("Seleccionaste la categoría: $categoria");
-    
-    // Navegar a la pantalla correspondiente según la categoría seleccionada
-    if (categoria == "Animales") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AnimalesScreen()),
-      );
-    }
-    // Puedes añadir más casos para otras categorías a medida que las vayas implementando
+  void _seleccionarAnimal(String animal) {
+    // Esta función manejará la selección de un animal
+    print("Seleccionaste el animal: $animal");
+    // Aquí puedes agregar navegación a una pantalla de actividad o mostrar un diálogo
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text("Animales"),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -79,15 +71,10 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
               // Mostrar diálogo de ayuda
             },
           ),
-          IconButton(
-            icon: Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {},
-          ),
         ],
       ),
       body: Container(
         decoration: BoxDecoration(
-          // Fondo con gradiente para un aspecto más atractivo
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -101,7 +88,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              // Instrucciones para el usuario
+              // Banner con instrucciones
               Container(
                 padding: EdgeInsets.all(15),
                 margin: EdgeInsets.only(bottom: 15),
@@ -117,7 +104,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
                   ],
                 ),
                 child: Text(
-                  "Selecciona una categoría y aprendamos a escribir palabras con imágenes",
+                  "Selecciona un animal para aprender a escribir su nombre",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -127,19 +114,19 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
                 ),
               ),
               
-              // Grid con las categorías
+              // Grid con los animales
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // Cambiado de 4 a 3 columnas
-                    crossAxisSpacing: 15, // Aumentado de 10 a 15 para dar más espacio entre columnas
-                    mainAxisSpacing: 15, // Aumentado para consistencia
-                    childAspectRatio: 0.85, // Ajustado para mejor visualización con 3 columnas
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                    childAspectRatio: 0.85,
                   ),
-                  itemCount: categorias.length,
+                  itemCount: animales.length,
                   padding: EdgeInsets.all(5),
                   itemBuilder: (context, index) {
-                    return _buildCategoriaItem(categorias[index]);
+                    return _buildAnimalItem(animales[index]);
                   },
                 ),
               ),
@@ -150,9 +137,9 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
     );
   }
 
-  Widget _buildCategoriaItem(Map<String, dynamic> categoria) {
+  Widget _buildAnimalItem(Map<String, dynamic> animal) {
     return GestureDetector(
-      onTap: () => _navegarACategoria(categoria["nombre"]),
+      onTap: () => _seleccionarAnimal(animal["nombre"]),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -171,7 +158,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
         ),
         child: Column(
           children: [
-            // Imagen de la categoría - ahora con ClipRRect para que se ajuste al contenedor con bordes redondeados
+            // Imagen del animal
             Expanded(
               flex: 6,
               child: ClipRRect(
@@ -181,10 +168,10 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
                 ),
                 child: Container(
                   width: double.infinity,
-                  height: double.infinity, // Asegurar que use toda la altura
+                  height: double.infinity,
                   child: Image.asset(
-                    categoria["imagen"],
-                    fit: BoxFit.fill, // Cambiado a fill para que rellene todo el espacio
+                    animal["imagen"],
+                    fit: BoxFit.fill,
                     errorBuilder: (context, error, stackTrace) {
                       print("Error cargando imagen: $error");
                       return Icon(
@@ -197,7 +184,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
                 ),
               ),
             ),
-            // Nombre de la categoría
+            // Nombre del animal
             Expanded(
               flex: 2,
               child: Container(
@@ -211,7 +198,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
                 ),
                 child: Center(
                   child: Text(
-                    categoria["nombre"],
+                    animal["nombre"],
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
