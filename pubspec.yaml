@@ -24,6 +24,8 @@ flutter:
   
   assets:
     - lib/utils/images/
+    - lib/utils/images/animales/
+    
 
   # Si usas fuentes personalizadas, descomenta y configura esta sección
   # fonts:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'item_detail_screen.dart';
 
 class AnimalesScreen extends StatefulWidget {
   @override
@@ -23,9 +24,30 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
   ];
 
   void _seleccionarAnimal(String animal) {
-    // Esta función manejará la selección de un animal
-    print("Seleccionaste el animal: $animal");
-    // Aquí puedes agregar navegación a una pantalla de actividad o mostrar un diálogo
+    // Buscar el animal seleccionado en la lista
+    Map<String, dynamic>? animalSeleccionado;
+    try {
+      animalSeleccionado = animales.firstWhere(
+        (item) => item["nombre"] == animal,
+      );
+    } catch (e) {
+      animalSeleccionado = {"nombre": animal, "imagen": ""};
+    }
+    
+    // Extraer explícitamente los valores como String
+    final String nombre = animalSeleccionado["nombre"].toString();
+    final String imagen = animalSeleccionado["imagen"].toString();
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ItemDetailScreen(
+          nombre: nombre,
+          imagen: imagen,
+          categoria: "Animales",
+        ),
+      ),
+    );
   }
 
   @override

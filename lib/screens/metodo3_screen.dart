@@ -22,6 +22,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
     {"nombre": "Cuerpo", "imagen": "lib/utils/images/cuerpo.jpeg"},
     {"nombre": "Casa", "imagen": "lib/utils/images/casa.jpeg"},
     {"nombre": "Estaciones", "imagen": "lib/utils/images/estaciones.jpeg"},
+    {"nombre": "incectos", "imagen": "lib/utils/images/incectos.jpeg"},
   ];
 
   void _navegarACategoria(String categoria) {
