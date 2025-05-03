@@ -1,43 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'item_detail_screen.dart';
-import '../constants/custombar_screen.dart'; // Agregar esta importación
+import '../constants/custombar_screen.dart';
 
-class AnimalesScreen extends StatefulWidget {
+class FrutasScreen extends StatefulWidget {
   @override
-  _AnimalesScreenState createState() => _AnimalesScreenState();
+  _FrutasScreenState createState() => _FrutasScreenState();
 }
 
-class _AnimalesScreenState extends State<AnimalesScreen> {
-  List<Map<String, dynamic>> animales = [
-    {"nombre": "Gato", "imagen": "lib/utils/images/animales/gato.jpeg"},
-    {"nombre": "Vaca", "imagen": "lib/utils/images/animales/vaca.jpeg"},
-    {"nombre": "Mono", "imagen": "lib/utils/images/animales/mono.jpeg"},
-    {"nombre": "Rana", "imagen": "lib/utils/images/animales/rana.jpeg"},
-    {"nombre": "Lobo", "imagen": "lib/utils/images/animales/lobo.jpeg"},
-    {"nombre": "Cebra", "imagen": "lib/utils/images/animales/cebra.jpeg"},
-    {"nombre": "Perro", "imagen": "lib/utils/images/animales/perro.jpeg"},
-    {"nombre": "Panda", "imagen": "lib/utils/images/animales/panda.jpeg"},
-    {"nombre": "Tigre", "imagen": "lib/utils/images/animales/tigre.jpeg"},
-    {"nombre": "León", "imagen": "lib/utils/images/animales/leon.jpeg"},
-    {"nombre": "Ratón", "imagen": "lib/utils/images/animales/raton.jpeg"},
-    {"nombre": "Delfín", "imagen": "lib/utils/images/animales/delfin.jpeg"},
-    {"nombre": "Pájaro", "imagen": "lib/utils/images/animales/pajaro.jpeg"},
-    {"nombre": "Conejo", "imagen": "lib/utils/images/animales/conejo.jpeg"},
-    {"nombre": "Caballo", "imagen": "lib/utils/images/animales/caballo.jpeg"},
-    {"nombre": "Oveja", "imagen": "lib/utils/images/animales/oveja.jpeg"},
-    {"nombre": "Araña", "imagen": "lib/utils/images/animales/arana.jpeg"},
-    {"nombre": "Jirafa", "imagen": "lib/utils/images/animales/jirafa.jpeg"},
-    {"nombre": "Koala", "imagen": "lib/utils/images/animales/koala.jpeg"},
-    {"nombre": "Tortuga", "imagen": "lib/utils/images/animales/tortuga.jpeg"},
-    {"nombre": "Ballena", "imagen": "lib/utils/images/animales/ballena.jpeg"},
-    {"nombre": "Canguro", "imagen": "lib/utils/images/animales/canguro.jpeg"},
-    {"nombre": "Caracol", "imagen": "lib/utils/images/animales/caracol.jpeg"},
-    {"nombre": "Gallina", "imagen": "lib/utils/images/animales/gallina.jpeg"},
-    {"nombre": "Pingüino", "imagen": "lib/utils/images/animales/pinguino.jpeg"},
-    {"nombre": "Mariposa", "imagen": "lib/utils/images/animales/mariposa.jpeg"},
-    {"nombre": "Serpiente", "imagen": "lib/utils/images/animales/serpiente.jpeg"},
-    {"nombre": "Elefante", "imagen": "lib/utils/images/animales/elefante.jpeg"},
+class _FrutasScreenState extends State<FrutasScreen> {
+  List<Map<String, dynamic>> frutas = [
+    {"nombre": "Mango", "imagen": "lib/utils/images/frutas/mango.jpeg"},
+    {"nombre": "Pera", "imagen": "lib/utils/images/frutas/pera.jpeg"},
+    {"nombre": "Uvas", "imagen": "lib/utils/images/frutas/uvas.jpeg"},
+    {"nombre": "Piña", "imagen": "lib/utils/images/frutas/pina.jpeg"},
+    {"nombre": "Limón", "imagen": "lib/utils/images/frutas/limon.jpeg"},
+    {"nombre": "Naranja", "imagen": "lib/utils/images/frutas/naranja.jpeg"},
+    {"nombre": "Fresa", "imagen": "lib/utils/images/frutas/fresa.jpeg"},
+    {"nombre": "Plátano", "imagen": "lib/utils/images/frutas/platano.jpeg"},
+    {"nombre": "Sandía", "imagen": "lib/utils/images/frutas/sandia.jpeg"},
+    {"nombre": "Manzana", "imagen": "lib/utils/images/frutas/manzana.jpeg"},
+    {"nombre": "Melón", "imagen": "lib/utils/images/frutas/melon.jpeg"},
+    {"nombre": "Papaya", "imagen": "lib/utils/images/frutas/papaya.jpeg"},
+    {"nombre": "Durazno", "imagen": "lib/utils/images/frutas/durazno.jpeg"},
+    {"nombre": "Ciruela", "imagen": "lib/utils/images/frutas/ciruela.jpeg"},
+    {"nombre": "Guayaba", "imagen": "lib/utils/images/frutas/guayaba.jpeg"},
+    {"nombre": "Cereza", "imagen": "lib/utils/images/frutas/cereza.jpeg"},
+    {"nombre": "Granada", "imagen": "lib/utils/images/frutas/granada.jpeg"},
+    {"nombre": "Kiwi", "imagen": "lib/utils/images/frutas/kiwi.jpeg"},
   ];
 
   @override
@@ -48,28 +38,28 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
 
   Future<void> _cargarProgreso() async {
     final prefs = await SharedPreferences.getInstance();
-    final ejerciciosCompletados = prefs.getStringList('animales_completados') ?? [];
+    final ejerciciosCompletados = prefs.getStringList('frutas_completados') ?? [];
     
     setState(() {
       // Primero, marcar todos como bloqueados
-      for (var animal in animales) {
-        animal['desbloqueado'] = false;
+      for (var fruta in frutas) {
+        fruta['desbloqueado'] = false;
       }
       
-      // Solo desbloquear el primer animal
-      if (animales.isNotEmpty) {
-        animales[0]['desbloqueado'] = true;
+      // Solo desbloquear la primera fruta
+      if (frutas.isNotEmpty) {
+        frutas[0]['desbloqueado'] = true;
       }
       
       // Luego desbloquear según el progreso guardado
       if (ejerciciosCompletados.isNotEmpty) {
         for (var nombre in ejerciciosCompletados) {
-          int index = animales.indexWhere((a) => a['nombre'] == nombre);
+          int index = frutas.indexWhere((f) => f['nombre'] == nombre);
           if (index != -1) {
-            animales[index]['desbloqueado'] = true;
-            // Desbloquear el siguiente animal
-            if (index + 1 < animales.length) {
-              animales[index + 1]['desbloqueado'] = true;
+            frutas[index]['desbloqueado'] = true;
+            // Desbloquear la siguiente fruta
+            if (index + 1 < frutas.length) {
+              frutas[index + 1]['desbloqueado'] = true;
             }
           }
         }
@@ -79,40 +69,39 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
 
   Future<void> _marcarComoCompletado(String nombre) async {
     final prefs = await SharedPreferences.getInstance();
-    final ejerciciosCompletados = prefs.getStringList('animales_completados') ?? [];
+    final ejerciciosCompletados = prefs.getStringList('frutas_completados') ?? [];
     
     if (!ejerciciosCompletados.contains(nombre)) {
       ejerciciosCompletados.add(nombre);
-      await prefs.setStringList('animales_completados', ejerciciosCompletados);
+      await prefs.setStringList('frutas_completados', ejerciciosCompletados);
       
       setState(() {
-        // Desbloquear el siguiente ejercicio
-        final currentIndex = animales.indexWhere((a) => a['nombre'] == nombre);
-        if (currentIndex + 1 < animales.length) {
-          animales[currentIndex + 1]['desbloqueado'] = true;
+        final currentIndex = frutas.indexWhere((f) => f['nombre'] == nombre);
+        if (currentIndex + 1 < frutas.length) {
+          frutas[currentIndex + 1]['desbloqueado'] = true;
         }
       });
     }
   }
 
-  void _seleccionarAnimal(String animal) async {
-    Map<String, dynamic>? animalSeleccionado = animales.firstWhere(
-      (item) => item["nombre"] == animal,
+  void _seleccionarFruta(String fruta) async {
+    Map<String, dynamic>? frutaSeleccionada = frutas.firstWhere(
+      (item) => item["nombre"] == fruta,
     );
     
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ItemDetailScreen(
-          nombre: animalSeleccionado["nombre"],
-          imagen: animalSeleccionado["imagen"],
-          categoria: "Animales",
+          nombre: frutaSeleccionada["nombre"],
+          imagen: frutaSeleccionada["imagen"],
+          categoria: "Frutas",
         ),
       ),
     );
 
     if (result != null && result['completado'] == true) {
-      await _marcarComoCompletado(animal);
+      await _marcarComoCompletado(fruta);
     }
   }
 
@@ -130,8 +119,8 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color.fromARGB(255, 247, 250, 255),
-              const Color.fromARGB(255, 215, 235, 255),
+              const Color.fromARGB(255, 255, 245, 245),
+              const Color.fromARGB(255, 255, 230, 230),
             ],
           ),
         ),
@@ -139,12 +128,11 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              // Banner con instrucciones
               Container(
                 padding: EdgeInsets.all(15),
                 margin: EdgeInsets.only(bottom: 15),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.7),
+                  color: Colors.red.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
@@ -155,7 +143,7 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                   ],
                 ),
                 child: Text(
-                  "Selecciona un animal para aprender a escribir su nombre",
+                  "Selecciona una fruta para aprender a escribir su nombre",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -164,8 +152,6 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                   ),
                 ),
               ),
-              
-              // Grid con los animales
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -174,10 +160,10 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,
                   ),
-                  itemCount: animales.length,
+                  itemCount: frutas.length,
                   padding: EdgeInsets.all(5),
                   itemBuilder: (context, index) {
-                    return _buildAnimalItem(animales[index]);
+                    return _buildFrutaItem(frutas[index]);
                   },
                 ),
               ),
@@ -188,11 +174,11 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
     );
   }
 
-  Widget _buildAnimalItem(Map<String, dynamic> animal) {
-    final bool desbloqueado = animal['desbloqueado'];
+  Widget _buildFrutaItem(Map<String, dynamic> fruta) {
+    final bool desbloqueado = fruta['desbloqueado'];
 
     return GestureDetector(
-      onTap: desbloqueado ? () => _seleccionarAnimal(animal["nombre"]) : null,
+      onTap: desbloqueado ? () => _seleccionarFruta(fruta["nombre"]) : null,
       child: Opacity(
         opacity: desbloqueado ? 1.0 : 0.5,
         child: Container(
@@ -207,7 +193,7 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
               ),
             ],
             border: Border.all(
-              color: desbloqueado ? Colors.blue.withOpacity(0.5) : Colors.grey,
+              color: desbloqueado ? Colors.red.withOpacity(0.5) : Colors.grey,
               width: 2,
             ),
           ),
@@ -215,7 +201,6 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
             children: [
               Column(
                 children: [
-                  // Imagen del animal
                   Expanded(
                     flex: 6,
                     child: ClipRRect(
@@ -227,7 +212,7 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                         width: double.infinity,
                         height: double.infinity,
                         child: Image.asset(
-                          animal["imagen"],
+                          fruta["imagen"],
                           fit: BoxFit.fill,
                           errorBuilder: (context, error, stackTrace) {
                             print("Error cargando imagen: $error");
@@ -241,13 +226,12 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                       ),
                     ),
                   ),
-                  // Nombre del animal
                   Expanded(
                     flex: 2,
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.7),
+                        color: Colors.red.withOpacity(0.7),
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(13),
                           bottomRight: Radius.circular(13),
@@ -255,7 +239,7 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          animal["nombre"],
+                          fruta["nombre"],
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,

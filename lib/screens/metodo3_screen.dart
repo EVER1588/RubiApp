@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/custombar_screen.dart';
 import '../categorias/animales_screen.dart';
+import '../categorias/frutas_screen.dart'; // Importar FrutasScreen
 
 class Metodo3Screen extends StatefulWidget {
   @override
@@ -21,7 +22,7 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
     {"nombre": "Escuela", "imagen": "lib/utils/images/escuela.jpeg"},
     {"nombre": "Cuerpo", "imagen": "lib/utils/images/cuerpo.jpeg"},
     {"nombre": "Casa", "imagen": "lib/utils/images/casa.jpeg"},
-    {"nombre": "Estaciones", "imagen": "lib/utils/images/estaciones.jpeg"},
+    {"nombre": "Clima", "imagen": "lib/utils/images/clima.jpeg"},
     {"nombre": "incectos", "imagen": "lib/utils/images/incectos.jpeg"},
   ];
 
@@ -34,57 +35,22 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
         context,
         MaterialPageRoute(builder: (context) => AnimalesScreen()),
       );
+    } else if (categoria == "Frutas") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => FrutasScreen()),
+      );
     }
-    // Puedes añadir más casos para otras categorías a medida que las vayas implementando
+    // Otras categorías se agregarán aquí más adelante
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue[700]!, Colors.blue[500]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        leading: Container(
-          margin: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: IconButton(
-            icon: Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-              size: 22,
-            ),
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () {
-              // Mostrar diálogo de ayuda
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.info_outline, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
+      appBar: CustomBar(
+        onBackPressed: () {
+          Navigator.pop(context);
+        },
       ),
       body: Container(
         decoration: BoxDecoration(
