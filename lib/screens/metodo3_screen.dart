@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../constants/custombar_screen.dart';
 import '../categorias/animales_screen.dart';
 import '../categorias/frutas_screen.dart'; // Importar FrutasScreen
+import '../categorias/verduras_screen.dart'; // Importar VerdurasScreen
+import '../categorias/colores_screen.dart'; // Agregar esta importación
+import '../categorias/numeros_screen.dart'; // Agregar esta importación
 
 class Metodo3Screen extends StatefulWidget {
   @override
@@ -39,6 +42,21 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => FrutasScreen()),
+      );
+    } else if (categoria == "Verduras") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => VerdurasScreen()),
+      );
+    } else if (categoria == "Colores") {  // Agregar esta condición
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ColoresScreen()),
+      );
+    } else if (categoria == "Números") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => NumerosScreen()),
       );
     }
     // Otras categorías se agregarán aquí más adelante

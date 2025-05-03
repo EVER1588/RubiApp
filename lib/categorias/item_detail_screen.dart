@@ -42,13 +42,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     'lib/utils/gifs/celebracion10.gif',
   ];
 
-  // Agregar getter para los colores según la categoría
+  // Actualizar el getter de colores
   Color get categoryColor {
     switch (widget.categoria) {
       case "Frutas":
         return Colors.red;
       case "Animales":
         return Colors.blue;
+      case "Verduras":
+        return Colors.green;
+      case "Colores":
+        return Colors.orange;
+      case "Números":
+        return Colors.purple;
       default:
         return Colors.blue;
     }
@@ -78,13 +84,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              // Usar colores según la categoría
+              // Colores según la categoría
               widget.categoria == "Frutas"
                   ? const Color.fromARGB(255, 255, 245, 245)
-                  : const Color.fromARGB(255, 247, 250, 255),
+                  : widget.categoria == "Verduras"
+                      ? const Color.fromARGB(255, 245, 255, 245)
+                      : const Color.fromARGB(255, 247, 250, 255),
               widget.categoria == "Frutas"
                   ? const Color.fromARGB(255, 255, 230, 230)
-                  : const Color.fromARGB(255, 215, 235, 255),
+                  : widget.categoria == "Verduras"
+                      ? const Color.fromARGB(255, 230, 255, 230)
+                      : const Color.fromARGB(255, 215, 235, 255),
             ],
           ),
         ),
@@ -178,7 +188,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
               // Área para construcción de palabra
               Container(
-                margin: EdgeInsets.all(16),
+                margin: EdgeInsets.all(15),
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -211,24 +221,34 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               // Sílabas disponibles
               Padding(
                 padding: EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(
-                      "Sílabas disponibles:",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: categoryColor,
+                child: Container(  // Agregar un Container
+                  width: double.infinity,
+                  height: 250,  // Altura específica
+                  padding: EdgeInsets.all(25),  // Padding más grande
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: categoryColor.withOpacity(0.5)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Sílabas disponibles:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: categoryColor,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      alignment: WrapAlignment.center,
-                      children: silabas.map((silaba) => _buildDraggableSilaba(silaba)).toList(),
-                    ),
-                  ],
+                      SizedBox(height: 10),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        alignment: WrapAlignment.center,
+                        children: silabas.map((silaba) => _buildDraggableSilaba(silaba)).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -249,9 +269,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return DragTarget<Map<String, dynamic>>(
       builder: (context, candidateData, rejectedData) {
         return Container(
-          width: 60,
-          height: 60,
-          margin: EdgeInsets.symmetric(horizontal: 5),
+          width: 75,  // Aumentar de 60 a 75
+          height: 75, // Aumentar de 60 a 75
+          margin: EdgeInsets.symmetric(horizontal: 8), // Aumentar de 5 a 8
           decoration: BoxDecoration(
             color: silabasColocadas[index]["ocupado"] ? categoryColor.withOpacity(0.3) : Colors.grey[200],
             borderRadius: BorderRadius.circular(10),
@@ -292,8 +312,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       child: GestureDetector(
         onTap: () => decirTexto(silaba["silaba"]),
         child: Container(
-          width: 60,
-          height: 60,
+          width: 75,  // Aumentar de 60 a 75
+          height: 75, // Aumentar de 60 a 75
           decoration: BoxDecoration(
             color: categoryColor,
             borderRadius: BorderRadius.circular(10),
@@ -312,8 +332,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ),
       feedback: Material(
         child: Container(
-          width: 60,
-          height: 60,
+          width: 75,  // Aumentar de 60 a 75
+          height: 75, // Aumentar de 60 a 75
           decoration: BoxDecoration(
             color: categoryColor.withOpacity(0.8),
             borderRadius: BorderRadius.circular(10),
@@ -527,6 +547,53 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     "CEREZA": ["CE", "RE", "ZA"],
     "GRANADA": ["GRA", "NA", "DA"],
     "KIWI": ["KI", "WI"],
+    // Verduras
+    "PAPA": ["PA", "PA"],
+    "AJO": ["A", "JO"],
+    "APIO": ["A", "PIO"],
+    "CEBOLLA": ["CE", "BO", "LLA"],
+    "TOMATE": ["TO", "MA", "TE"],
+    "LECHUGA": ["LE", "CHU", "GA"],
+    "ZANAHORIA": ["ZA", "NA", "HO", "RIA"],
+    "BRÓCOLI": ["BRÓ", "CO", "LI"],
+    "PEPINO": ["PE", "PI", "NO"],
+    "CALABAZA": ["CA", "LA", "BA", "ZA"],
+    "PIMIENTO": ["PI", "MIEN", "TO"],
+    "ESPINACA": ["ES", "PI", "NA", "CA"],
+    "CHAYOTE": ["CHA", "YO", "TE"],
+    "COLIFLOR": ["CO", "LI", "FLOR"],
+    "RÁBANO": ["RÁ", "BA", "NO"],
+    "BERENJENA": ["BE", "REN", "JE", "NA"],
+    // Colores
+    "ROJO": ["RO", "JO"],
+    "AZUL": ["A", "ZUL"],
+    "VERDE": ["VER", "DE"],
+    "NEGRO": ["NE", "GRO"],
+    "BLANCO": ["BLAN", "CO"],
+    "MORADO": ["MO", "RA", "DO"],
+    "ROSADO": ["RO", "SA", "DO"],
+    "NARANJA": ["NA", "RAN", "JA"],
+    "MARRÓN": ["MA", "RRÓN"],
+    "AMARILLO": ["A", "MA", "RI", "LLO"],
+    "GRIS": ["GRIS"],
+    "DORADO": ["DO", "RA", "DO"],
+    "PLATEADO": ["PLA", "TE", "A", "DO"],
+    "VIOLETA": ["VIO", "LE", "TA"],
+    // Números
+    "UNO": ["U", "NO"],
+    "DOS": ["DOS"],
+    "TRES": ["TRES"],
+    "CUATRO": ["CUA", "TRO"],
+    "CINCO": ["CIN", "CO"],
+    "SEIS": ["SEIS"],
+    "SIETE": ["SIE", "TE"],
+    "OCHO": ["O", "CHO"],
+    "NUEVE": ["NUE", "VE"],
+    "DIEZ": ["DIEZ"],
+    "ONCE": ["ON", "CE"],
+    "DOCE": ["DO", "CE"],
+    "QUINCE": ["QUIN", "CE"],
+    "VEINTE": ["VEIN", "TE"],
   };
 
   // Verificar si la palabra es un caso especial
