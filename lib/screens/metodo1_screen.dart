@@ -3,6 +3,7 @@ import '../constants/constants.dart'; // Importar las funciones globales
 import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 import '../constants/state_manager.dart'; // Añadir esta importación
 import '../widgets/loading_background_image.dart'; // Añadir esta importación
+import '../services/tts_manager.dart'; // Importar TtsManager
 
 class Metodo1Screen extends StatelessWidget {
   @override
@@ -28,6 +29,7 @@ class _Metodo1ScreenContent extends StatefulWidget {
 
 class _Metodo1ScreenContentState extends State<_Metodo1ScreenContent> {
   final StateManager stateManager = StateManager();
+  final TtsManager ttsManager = TtsManager();
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
 
@@ -85,6 +87,7 @@ class _Metodo1ScreenContentState extends State<_Metodo1ScreenContent> {
   @override
   void initState() {
     super.initState();
+    ttsManager.initialize();
     // Recuperar el estado guardado
     _syllables = List.from(stateManager.syllablesM1);
     _currentBlockIndex = stateManager.currentBlockIndexM1;
@@ -111,7 +114,7 @@ class _Metodo1ScreenContentState extends State<_Metodo1ScreenContent> {
 
   // Reproduce el texto usando TTS
   Future<void> _speak(String text) async {
-    await decirTexto(text); // Usar la función global
+    await ttsManager.speak(text, isSyllable: text.length <= 2);
   }
 
   // Modificar el método _addLetter en _Metodo1ScreenState

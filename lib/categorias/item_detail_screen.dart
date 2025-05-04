@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart'; // Agregar esta importación
 import 'dart:math';
 import '../constants/custombar_screen.dart'; // Agregar esta importación
+import '../services/tts_manager.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final String nombre;
@@ -24,7 +25,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   List<Map<String, dynamic>> silabasColocadas = [];
   List<String> silabasOriginales = [];
 
-  final FlutterTts flutterTts = FlutterTts(); // Agregar esta línea
+  final TtsManager ttsManager = TtsManager();
 
   // Agregar esta variable de estado
   bool _isImageEnlarged = false;
@@ -63,6 +64,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   @override
   void initState() {
     super.initState();
+    ttsManager.initialize();
     _dividirEnSilabas();
     silabasColocadas = List.generate(
       silabasOriginales.length,
@@ -258,10 +260,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  // Método para texto a voz
-  Future<void> decirTexto(String texto) async {
-    await flutterTts.setLanguage("es-ES");
-    await flutterTts.speak(texto);
+  // Reemplazar el método decirTexto actual
+  Future<void> decirTexto(String texto, {bool esSilaba = false}) async {
+    if (esSilaba) {
+      await ttsManager.speakSpecialSyllable(texto);
+    } else {
+      await ttsManager.speak(texto);
+    }
   }
 
   // Método para construir cajas objetivo
@@ -310,7 +315,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return Draggable<Map<String, dynamic>>(
       data: silaba,
       child: GestureDetector(
-        onTap: () => decirTexto(silaba["silaba"]),
+        onTap: () {
+          decirTexto(silaba["silaba"], esSilaba: true);
+        },
         child: Container(
           width: 75,  // Aumentar de 60 a 75
           height: 75, // Aumentar de 60 a 75

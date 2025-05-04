@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../constants/constants.dart'; // Importar las funciones globales y silabasClasificadas
 import '../constants/concatenacion_screen.dart'; // Importar BlockColor y concatenar bloques
+import '../services/tts_manager.dart';
 
 class Metodo2Teclado extends StatefulWidget {
   final Function(String) onLetterPressed;
@@ -25,10 +26,18 @@ class Metodo2Teclado extends StatefulWidget {
 }
 
 class _Metodo2TecladoState extends State<Metodo2Teclado> {
+  final TtsManager ttsManager = TtsManager();
+
   String _categoriaSeleccionada = "comunes"; // Categoría seleccionada por defecto
   List<String> _silabasActuales = []; // Lista de sílabas actuales
   bool _modoAcentuado = false; // Modo acentuado desactivado por defecto
   bool _cerrarAutomaticamente = true; // Estado inicial del check
+
+  @override
+  void initState() {
+    super.initState();
+    ttsManager.initialize();
+  }
 
   @override
   void didUpdateWidget(Metodo2Teclado oldWidget) {
@@ -60,6 +69,10 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
         _silabasActuales = silabas;
       }
     });
+  }
+
+  Future<void> _decirSilaba(String silaba) async {
+    await ttsManager.speakSpecialSyllable(silaba);
   }
 
   @override
@@ -256,7 +269,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
                                     
                                     return GestureDetector(
                                       onTap: () {
-                                        flutterTts.speak(silaba); // Leer la sílaba
+                                        _decirSilaba(silaba); // Leer la sílaba
                                       },
                                       child: Draggable<Map<String, dynamic>>(
                                         // Aquí es donde modificamos el data para incluir el color adecuado

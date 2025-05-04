@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Importa SystemChrome
 import 'screens/bienvenida_screen.dart'; // Importa la pantalla inicial
 import 'constants/state_manager.dart'; // Agregar esta importación
+import 'services/tts_manager.dart'; // Importa TtsManager
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Cargar datos guardados
-  await StateManager().cargarDatos();
+  // Inicializar TtsManager
+  final ttsManager = TtsManager();
+  await ttsManager.initialize();
   
-  // Configurar la aplicación en modo pantalla completa
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-
   runApp(MyApp());
 }
 
