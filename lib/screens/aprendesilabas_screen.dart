@@ -7,6 +7,7 @@ class Metodo1Screen extends StatefulWidget {
 }
 
 class _Metodo1ScreenState extends State<Metodo1Screen> {
+  // Eliminamos FlutterTts local y usamos TtsManager.instance
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
 
@@ -61,10 +62,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   @override
   void initState() {
     super.initState();
-    TtsManager.instance.init();
+    TtsManager.instance.init(); // Inicializamos el manager centralizado
   }
 
-  // Reproduce el texto usando TTS
+  // Reproduce el texto usando TtsManager
   Future<void> _speak(String text) async {
     await TtsManager.instance.speak(text);
   }

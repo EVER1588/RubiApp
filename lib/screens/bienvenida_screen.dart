@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'menu_screen.dart';
 
 class BienvenidaScreen extends StatelessWidget {
-  final double screenWidth;
-  final double screenHeight;
-
-  BienvenidaScreen({required this.screenWidth, required this.screenHeight});
-
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: Colors.orange[100],
       body: SafeArea(

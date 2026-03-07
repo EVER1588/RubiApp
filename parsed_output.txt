@@ -1,0 +1,1630 @@
+android/app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace = "com.example.rubiapp2"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.rubiapp2"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+andriod/build.gradle.kts
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+andriod/settings.gradle.kts
+pluginManagement {
+    val flutterSdkPath = run {
+        val properties = java.util.Properties()
+        file("local.properties").inputStream().use { properties.load(it) }
+        val flutterSdkPath = properties.getProperty("flutter.sdk")
+        require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
+        flutterSdkPath
+    }
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "8.7.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
+}
+
+include(":app")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/bienvenida_screen.dart
+import 'package:flutter/material.dart';
+import 'menu_screen.dart';
+
+class BienvenidaScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      backgroundColor: Colors.orange[100],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Barra de navegación
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: Colors.deepPurple),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.more_vert, color: Colors.deepPurple),
+                    onPressed: () {
+                      _showOptionsDialog(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            // Contenido principal
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Hola',
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.08, // Tamaño relativo al alto
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                      ),
+                    ),
+                    Text(
+                      'Aprendamos a leer',
+                      style: TextStyle(
+                        fontSize: screenHeight * 0.04, // Tamaño relativo al alto
+                        color: Colors.deepPurple[800],
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.1), // Espaciado relativo
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MenuScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenWidth * 0.1, // Ancho relativo
+                          vertical: screenHeight * 0.02, // Alto relativo
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text(
+                        'Comencemos',
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.03, // Tamaño relativo
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOptionsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Opciones'),
+        content: Text('Aquí van las opciones'),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/configuracion_screen.dart
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+
+class ConfiguracionScreen extends StatefulWidget {
+  @override
+  _ConfiguracionScreenState createState() => _ConfiguracionScreenState();
+}
+
+class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
+  final FlutterTts _flutterTts = FlutterTts();
+
+  // Velocidad de lectura
+  double _ttsSpeed = 0.5; // Normal por defecto
+  String _selectedSpeed = 'Normal'; // Botón seleccionado
+
+  // Volumen de la música
+  double _musicVolume = 0.5; // Rango: 0.0 a 1.0
+  bool _isMusicMuted = false;
+
+  // Volumen de la lectura
+  double _ttsVolume = 1.0; // Rango: 0.0 a 1.0
+  bool _isTtsMuted = false;
+
+  // Esquema de colores
+  Color _primaryColor = Colors.deepPurple;
+  Color _secondaryColor = Colors.orange;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _ttsSpeed = prefs.getDouble('ttsSpeed') ?? 1.0;
+      _selectedSpeed = _getSpeedLabel(_ttsSpeed);
+
+      _musicVolume = prefs.getDouble('musicVolume') ?? 0.5;
+      _isMusicMuted = prefs.getBool('isMusicMuted') ?? false;
+
+      _ttsVolume = prefs.getDouble('ttsVolume') ?? 1.0;
+      _isTtsMuted = prefs.getBool('isTtsMuted') ?? false;
+
+      _primaryColor = Color(prefs.getInt('primaryColor') ?? Colors.deepPurple.value);
+      _secondaryColor = Color(prefs.getInt('secondaryColor') ?? Colors.orange.value);
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('ttsSpeed', _ttsSpeed);
+    await prefs.setDouble('musicVolume', _musicVolume);
+    await prefs.setBool('isMusicMuted', _isMusicMuted);
+    await prefs.setDouble('ttsVolume', _ttsVolume);
+    await prefs.setBool('isTtsMuted', _isTtsMuted);
+    await prefs.setInt('primaryColor', _primaryColor.value);
+    await prefs.setInt('secondaryColor', _secondaryColor.value);
+  }
+
+  String _getSpeedLabel(double speed) {
+    if (speed < 0.75) return 'Lenta';
+    if (speed > 1.25) return 'Rápida';
+    return 'Normal';
+  }
+
+  void _setTtsSpeed(double speed) {
+    setState(() {
+      _ttsSpeed = speed;
+      _selectedSpeed = _getSpeedLabel(speed);
+      _flutterTts.setSpeechRate(speed);
+      _saveSettings();
+    });
+  }
+
+  void _toggleMusicMute() {
+    setState(() {
+      _isMusicMuted = !_isMusicMuted;
+      _saveSettings();
+    });
+  }
+
+  void _toggleTtsMute() {
+    setState(() {
+      _isTtsMuted = !_isTtsMuted;
+      _flutterTts.setVolume(_isTtsMuted ? 0.0 : _ttsVolume);
+      _saveSettings();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Configuración'),
+        backgroundColor: _primaryColor,
+      ),
+      body: ListView(
+        padding: EdgeInsets.all(16),
+        children: [
+          // Velocidad de lectura
+          ListTile(
+            title: Text('Velocidad de Lectura'),
+            subtitle: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _setTtsSpeed(0.5),
+                  child: Text('Lenta'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedSpeed == 'Lenta' ? _primaryColor : null,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => _setTtsSpeed(1.0),
+                  child: Text('Normal'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedSpeed == 'Normal' ? _primaryColor : null,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => _setTtsSpeed(1.5),
+                  child: Text('Rápida'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedSpeed == 'Rápida' ? _primaryColor : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Volumen de la música
+          ListTile(
+            title: Text('Volumen de la Música'),
+            subtitle: Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: _musicVolume,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (value) {
+                      setState(() {
+                        _musicVolume = value;
+                        _saveSettings();
+                      });
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(_isMusicMuted ? Icons.volume_off : Icons.volume_up),
+                  onPressed: _toggleMusicMute,
+                ),
+              ],
+            ),
+          ),
+
+          // Volumen de la lectura
+          ListTile(
+            title: Text('Volumen de la Lectura'),
+            subtitle: Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: _ttsVolume,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (value) {
+                      setState(() {
+                        _ttsVolume = value;
+                        _flutterTts.setVolume(value);
+                        _saveSettings();
+                      });
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(_isTtsMuted ? Icons.volume_off : Icons.volume_up),
+                  onPressed: _toggleTtsMute,
+                ),
+              ],
+            ),
+          ),
+
+          // Esquema de colores
+          ListTile(
+            title: Text('Esquema de Colores'),
+            subtitle: Wrap(
+              spacing: 8,
+              children: [
+                _buildColorButton(Colors.deepPurple, _primaryColor),
+                _buildColorButton(Colors.blue, _primaryColor),
+                _buildColorButton(Colors.green, _primaryColor),
+                _buildColorButton(Colors.red, _primaryColor),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorButton(Color color, Color selectedColor) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _primaryColor = color;
+          _saveSettings();
+        });
+      },
+      child: CircleAvatar(
+        radius: 20,
+        backgroundColor: color,
+        child: color == selectedColor ? Icon(Icons.check, color: Colors.white) : null,
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/menu_screen.dart
+import 'package:flutter/material.dart';
+import 'metodo1_screen.dart';
+import 'metodo2_screen.dart';
+import 'metodo3_screen.dart';
+import 'configuracion_screen.dart';
+import '../widgets/custom_app_bar.dart';
+
+class MenuScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CustomAppBar(title: 'Menú Principal'),
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildBotonMetodo(
+                  context,
+                  'Aprende Sílabas',
+                  Colors.deepPurple,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Metodo1Screen(),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildBotonMetodo(
+                  context,
+                  'Formando Palabras',
+                  Colors.deepOrange,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Metodo2Screen(),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildBotonMetodo(
+                  context,
+                  'Describe la Imagen',
+                  Colors.teal,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Metodo3Screen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: _buildBotonInferior(
+              Icons.settings,
+              Colors.grey,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ConfiguracionScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBotonMetodo(
+    BuildContext context,
+    String texto,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: 80,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          texto,
+          style: TextStyle(
+            fontSize: 24,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotonInferior(IconData icon, Color color, VoidCallback onPressed) {
+    return FloatingActionButton(
+      onPressed: onPressed,
+      backgroundColor: color,
+      child: Icon(icon, color: Colors.white),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/metodo1_screen.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+
+class Metodo1Screen extends StatefulWidget {
+  @override
+  _Metodo1ScreenState createState() => _Metodo1ScreenState();
+}
+
+class _Metodo1ScreenState extends State<Metodo1Screen> {
+  final FlutterTts _flutterTts = FlutterTts(); // Instancia de FlutterTts
+  List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
+  int _currentBlockIndex = 0; // Índice del bloque actual
+
+  // Lista de letras del alfabeto español
+  final List<String> _letters = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+  ];
+
+  // Lista de sílabas válidas en español
+  final List<String> _validSyllables = [
+    'AL', 'AN', 'AR',
+    'EL', 'ES', 'IS', 'AS', 'IN',
+    'BA', 'BE', 'BI', 'BO', 'BU',
+    'CA', 'CE', 'CI', 'CO', 'CU',
+    'DA', 'DE', 'DI', 'DO', 'DU',
+    'FA', 'FE', 'FI', 'FO', 'FU',
+    'GA', 'GE', 'GI', 'GO', 'GU',
+    'HA', 'HE', 'HI', 'HO', 'HU',
+    'JA', 'JE', 'JI', 'JO', 'JU',
+    'LA', 'LE', 'LI', 'LO', 'LU',
+    'MA', 'ME', 'MI', 'MO', 'MU',
+    'NA', 'NE', 'NI', 'NO', 'NU',
+    'ÑA', 'ÑE', 'ÑI', 'ÑO', 'ÑU',
+    'PA', 'PE', 'PI', 'PO', 'PU',
+    'RA', 'RE', 'RI', 'RO', 'RU',
+    'SA', 'SE', 'SI', 'SO', 'SU',
+    'TA', 'TE', 'TI', 'TO', 'TU',
+    'VA', 'VE', 'VI', 'VO', 'VU',
+    'ZA', 'ZE', 'ZI', 'ZO', 'ZU',
+    'BLA', 'BLE', 'BLI', 'BLO', 'BLU',
+    'CLA', 'CLE', 'CLI', 'CLO', 'CLU',
+    'FLA', 'FLE', 'FLI', 'FLO', 'FLU',
+    'GLA', 'GLE', 'GLI', 'GLO', 'GLU',
+    'PLA', 'PLE', 'PLI', 'PLO', 'PLU',
+    'TRA', 'TRE', 'TRI', 'TRO', 'TRU',
+    'LLA', 'LLE', 'LLI', 'LLO', 'LLU',
+    'CRA', 'CRE', 'CRI', 'CRO', 'CRU',
+    'FRA', 'FRE', 'FRI', 'FRO', 'FRU',
+    'GRA', 'GRE', 'GRI', 'GRO', 'GRU',
+    'PRA', 'PRE', 'PRI', 'PRO', 'PRU',
+  ];
+
+  // Mapa para controlar qué letras están activas
+  Map<String, bool> _activeLetters = {
+    'A': true, 'B': true, 'C': true, 'D': true, 'E': true, 'F': true, 'G': true,
+    'H': true, 'I': true, 'J': true, 'K': true, 'L': true, 'M': true, 'N': true,
+    'Ñ': true, 'O': true, 'P': true, 'Q': true, 'R': true, 'S': true, 'T': true,
+    'U': true, 'V': true, 'W': true, 'X': true, 'Y': true, 'Z': true,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _configureTts(); // Configura el TTS al iniciar la pantalla
+  }
+
+  // Configura el TTS (idioma, velocidad, volumen, tono)
+  void _configureTts() async {
+    await _flutterTts.setLanguage("es-MX"); // Español latino (México)
+    await _flutterTts.setSpeechRate(1.0); // Velocidad de habla (1.0 es normal)
+    await _flutterTts.setVolume(1.0); // Volumen (0.0 a 1.0)
+    await _flutterTts.setPitch(1.0); // Tono (0.5 a 2.0)
+  }
+
+  // Reproduce el texto usando TTS
+  Future<void> _speak(String text) async {
+    await _flutterTts.speak(text);
+  }
+
+  // Agrega una letra al bloque actual y valida la sílaba
+  void _addLetter(String letter) async {
+    if (!_activeLetters[letter]!) return; // Ignorar letras desactivadas
+
+    setState(() {
+      _syllables[_currentBlockIndex] += letter; // Agregar la letra al bloque actual
+    });
+
+    await _speak(letter); // Reproduce el sonido de la letra
+
+    // Validar y actualizar el estado del teclado
+    if (_syllables[_currentBlockIndex].length == 1) {
+      _updateActiveLetters(_syllables[_currentBlockIndex]);
+    } else if (_syllables[_currentBlockIndex].length >= 2) {
+      if (_validSyllables.contains(_syllables[_currentBlockIndex])) {
+        await _speak(_syllables[_currentBlockIndex]); // Reproduce la sílaba completa
+        _resetActiveLetters(); // Restaurar todas las letras después de formar una sílaba
+        _moveToNextBlock(); // Moverse al siguiente bloque
+      } else {
+        _updateActiveLetters(_syllables[_currentBlockIndex]);
+      }
+    }
+  }
+
+  // Actualiza las letras activas basadas en la primera o segunda letra seleccionada
+  void _updateActiveLetters(String currentSyllable) {
+    _activeLetters.updateAll((key, value) => false); // Desactivar todas las letras
+    for (String syllable in _validSyllables) {
+      if (syllable.startsWith(currentSyllable)) {
+        _activeLetters[syllable[currentSyllable.length]] = true; // Activar letras válidas
+      }
+    }
+  }
+
+  // Restaura todas las letras como activas
+  void _resetActiveLetters() {
+    _activeLetters.updateAll((key, value) => true); // Activar todas las letras
+  }
+
+  // Moverse al siguiente bloque
+  void _moveToNextBlock() {
+    setState(() {
+      _syllables.add(''); // Agregar un nuevo bloque vacío
+      _currentBlockIndex++; // Incrementar el índice del bloque actual
+    });
+  }
+
+  // Borra la última letra del bloque actual
+  void _deleteLastLetter() {
+    if (_syllables[_currentBlockIndex].isNotEmpty) {
+      setState(() {
+        _syllables[_currentBlockIndex] =
+            _syllables[_currentBlockIndex].substring(0, _syllables[_currentBlockIndex].length - 1);
+      });
+    }
+    _resetActiveLetters(); // Restaurar todas las letras si se borra algo
+  }
+
+  // Limpia toda la sílaba formada
+  void _clearSyllable() {
+    setState(() {
+      _syllables = ['']; // Reiniciar la lista de bloques
+      _currentBlockIndex = 0; // Reiniciar el índice del bloque actual
+    });
+    _resetActiveLetters(); // Restaurar todas las letras
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Formar Sílabas'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Column(
+        children: [
+          // Renglón superior: Muestra los bloques de sílabas
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: Wrap(
+              spacing: 8.0, // Espacio entre bloques
+              children: _syllables.map((syllable) {
+                final isValid = _validSyllables.contains(syllable);
+                return Chip(
+                  label: Text(
+                    syllable.isNotEmpty ? syllable : '_',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  backgroundColor: isValid ? Colors.green : Colors.grey,
+                  labelStyle: TextStyle(color: Colors.white),
+                );
+              }).toList(),
+            ),
+          ),
+
+          // Teclado de letras
+          Expanded(
+            child: GridView.builder(
+              padding: EdgeInsets.all(10),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4, // 4 columnas
+                crossAxisSpacing: 10, // Espacio horizontal entre letras
+                mainAxisSpacing: 10, // Espacio vertical entre letras
+                childAspectRatio: 1.5, // Relación de aspecto de los botones
+              ),
+              itemCount: _letters.length,
+              itemBuilder: (context, index) {
+                return _buildLetterButton(_letters[index]);
+              },
+            ),
+          ),
+
+          // Botones de borrar y limpiar
+          Padding(
+            padding: EdgeInsets.all(10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _deleteLastLetter,
+                  child: Text('Borrar Última Letra'),
+                ),
+                ElevatedButton(
+                  onPressed: _clearSyllable,
+                  child: Text('Limpiar'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Construye un botón de letra
+  Widget _buildLetterButton(String letter) {
+    return ElevatedButton(
+      onPressed: _activeLetters[letter]! ? () => _addLetter(letter) : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _activeLetters[letter]! ? Colors.blueAccent : Colors.grey,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Text(
+        letter,
+        style: TextStyle(fontSize: 24),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/metodo2_screen.dart
+import 'package:flutter/material.dart';
+import 'metodo2teclado_screen.dart';
+
+class Metodo2Screen extends StatefulWidget {
+  const Metodo2Screen({Key? key}) : super(key: key);
+
+  @override
+  _Metodo2ScreenState createState() => _Metodo2ScreenState();
+}
+
+class _Metodo2ScreenState extends State<Metodo2Screen> {
+  List<String> selectedSilabas = [];
+  final List<String> _validWords = [
+    "HUMANIDAD", "HUMANO", "PERSONA", "GENTE", "HOMBRE", "MUJER",
+    "SÍ", "NO", "GRACIAS"
+  ];
+
+  // Función para verificar si una cadena es un prefijo válido
+  bool _isValidPrefix(String prefix) {
+    return _validWords.any((word) => word.startsWith(prefix));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Método 2'),
+      ),
+      body: Column(
+        children: [
+          // Contenedor 1 (Renglón superior)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025),
+            child: Container(
+              height: screenHeight * 0.1,
+              width: screenWidth * 0.87,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(screenWidth * 0.025),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    spreadRadius: screenWidth * 0.005,
+                    blurRadius: screenWidth * 0.01,
+                    offset: Offset(0, screenHeight * 0.005),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text(
+                  'Renglón 1',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: screenHeight * 0.02),
+          // Contenedor 2 con basurero
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025),
+            child: Container(
+              height: screenHeight * 0.3,
+              width: screenWidth * 0.87,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(screenWidth * 0.025),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    spreadRadius: screenWidth * 0.005,
+                    blurRadius: screenWidth * 0.01,
+                    offset: Offset(0, screenHeight * 0.005),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  DragTarget<String>(
+                    builder: (context, candidateData, rejectedData) {
+                      return Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: Wrap(
+                          spacing: screenWidth * 0.02,
+                          runSpacing: screenWidth * 0.02,
+                          children: List.generate(selectedSilabas.length, (index) {
+                            final silaba = selectedSilabas[index];
+                            return _buildDraggableSyllableBlock(silaba, index, screenWidth, screenHeight);
+                          }),
+                        ),
+                      );
+                    },
+                    onWillAccept: (data) => true,
+                    onAccept: (String silaba) {
+                      setState(() => selectedSilabas.add(silaba));
+                    },
+                  ),
+                  Positioned(
+                    bottom: screenHeight * 0.005,
+                    right: screenWidth * 0.025,
+                    child: DragTarget<String>(
+                      builder: (context, candidateData, rejectedData) {
+                        return Container(
+                          height: screenWidth * 0.15,
+                          width: screenWidth * 0.15,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(screenWidth * 0.025),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                spreadRadius: screenWidth * 0.005,
+                                blurRadius: screenWidth * 0.01,
+                                offset: Offset(0, screenHeight * 0.005),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.delete, color: Colors.white, size: 25),
+                          ),
+                        );
+                      },
+                      onWillAccept: (data) => true,
+                      onAccept: (String silaba) {
+                        setState(() => selectedSilabas.remove(silaba));
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: screenHeight * 0.02),
+          // Teclado principal
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(screenWidth * 0.04),
+              child: Metodo2Teclado(
+                onSyllableSelected: (silaba) {
+                  setState(() => selectedSilabas.add(silaba));
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Construye un bloque de sílaba arrastrable
+  Widget _buildDraggableSyllableBlock(String silaba, int index, double screenWidth, double screenHeight) {
+    // Determinar el color del bloque
+    final isValidWord = _validWords.contains(silaba.toUpperCase());
+    final isValidPrefix = _isValidPrefix(silaba.toUpperCase());
+
+    return Draggable<String>(
+      data: silaba,
+      feedback: Material(
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.025,
+            vertical: screenHeight * 0.005,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(screenWidth * 0.025),
+          ),
+          child: Text(
+            silaba,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.5,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.025,
+            vertical: screenHeight * 0.005,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.orange,
+            borderRadius: BorderRadius.circular(screenWidth * 0.025),
+          ),
+          child: Text(
+            silaba,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+      ),
+      child: DragTarget<String>(
+        builder: (context, candidateData, rejectedData) {
+          return Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.025,
+              vertical: screenHeight * 0.005,
+            ),
+            decoration: BoxDecoration(
+              color: isValidWord ? Colors.green : (isValidPrefix ? Colors.orange : Colors.grey),
+              borderRadius: BorderRadius.circular(screenWidth * 0.025),
+            ),
+            child: Text(
+              silaba,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          );
+        },
+        onWillAccept: (data) => true,
+        onAccept: (String droppedSyllable) {
+          setState(() {
+            // Concatenar las sílabas
+            final combinedWord = '$silaba$droppedSyllable';
+
+            if (_validWords.contains(combinedWord.toUpperCase())) {
+              // Fusionar en una palabra válida
+              selectedSilabas.removeAt(index); // Eliminar la primera sílaba
+              selectedSilabas.remove(droppedSyllable); // Eliminar la segunda sílaba
+              selectedSilabas.add(combinedWord); // Agregar la palabra fusionada
+            } else if (_isValidPrefix(combinedWord.toUpperCase())) {
+              // Fusionar como prefijo válido
+              selectedSilabas.removeAt(index); // Eliminar la primera sílaba
+              selectedSilabas.remove(droppedSyllable); // Eliminar la segunda sílaba
+              selectedSilabas.add(combinedWord); // Agregar el prefijo
+            } else {
+              // Intercambiar posiciones si no es válido
+              final droppedIndex = selectedSilabas.indexOf(droppedSyllable);
+              if (droppedIndex != -1) {
+                final temp = selectedSilabas[index];
+                selectedSilabas[index] = selectedSilabas[droppedIndex];
+                selectedSilabas[droppedIndex] = temp;
+              }
+            }
+          });
+        },
+      ),
+      onDragStarted: () {},
+      onDragCompleted: () {},
+      onDraggableCanceled: (velocity, offset) {
+        setState(() => selectedSilabas.insert(index, silaba));
+      },
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/metodo2teclado_screen.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+
+class Metodo2Teclado extends StatefulWidget {
+  final Function(String) onSyllableSelected;
+  const Metodo2Teclado({Key? key, required this.onSyllableSelected}) : super(key: key);
+
+  @override
+  _Metodo2TecladoState createState() => _Metodo2TecladoState();
+}
+
+class _Metodo2TecladoState extends State<Metodo2Teclado> {
+  final FlutterTts flutterTts = FlutterTts();
+  bool isGridVisible = false;
+  String? letraSeleccionada;
+
+  // Lista de sílabas por letra
+  Map<String, List<String>> silabasPorLetra = {
+    "A": ["Á", "A", "AL", "AN", "AR", "AS", "AM"],
+    "B": ["B", "BA", "BE", "BI", "BO", "BU", "BLA", "BLE", "BLI", "BLO", "BLU"],
+    "C": ["C", "CA", "CE", "CI", "CO", "CU", "CLA", "CLE", "CLI", "CLO", "CLU", "CRA", "CRE", "CRI", "CRO", "CRU","CIAS"],
+    "D": ["D", "DA", "DE", "DI", "DO", "DU"],
+    "E": ["É", "E", "EL", "EM", "EN", "ES", "ER"],
+    "F": ["F", "FA", "FE", "FI", "FO", "FU", "FLA", "FLE", "FLI", "FLO", "FLU", "FRA", "FRE", "FRI", "FRO", "FRU"],
+    "G": ["G", "GA", "GE", "GI", "GO", "GU", "GUN", "GEN", "GUA", "GUE", "GUI", "GLA", "GLE", "GLI", "GLO", "GLU", "GRA", "GRE", "GRI", "GRO", "GRU"],
+    "H": ["H", "HA", "HE", "HI", "HIS", "HO", "HU"],
+    "I": ["Í", "I", "IS", "IN", "IR", "IM"],
+    "J": ["J", "JA", "JE", "JI", "JO", "JU"],
+    "K": ["K", "KA", "KE", "KI", "KO", "KU"],
+    "L": ["L", "LA", "LE", "LI", "LO", "LU", "LAS", "LOS", "LUZ", "LLA", "LLE", "LLI", "LLO", "LLU"],
+    "M": ["M", "MA", "ME", "MI", "MO", "MU", "MAS", "MES", "MIS", "MOS"],
+    "N": ["N", "NA", "NE", "NI", "NO", "NU"],
+    "Ñ": ["Ñ", "ÑA", "ÑE", "ÑI", "ÑO", "ÑU"],
+    "O": ["Ó", "O", "OS", "ON"],
+    "P": ["P", "PA", "PE", "PI", "PO", "PU", "PLA", "PLE", "PLI", "PLO", "PLU", "PRA", "PRE", "PRI", "PRO", "PRU"],
+    "Q": ["Q", "QUE", "QUI"],
+    "R": ["R", "RA", "RE", "RI", "RO", "RU"],
+    "S": ["S", "SA", "SE", "SI", "SO", "SU"],
+    "T": ["T", "TA", "TE", "TI", "TO", "TU", "TRA", "TRE", "TRI", "TRO", "TRU"],
+    "U": ["Ú", "U", "UL", "UN", "UR", "US"],
+    "V": ["V", "VA", "VE", "VI", "VO", "VU"],
+    "W": ["W", "WEB", "WI"],
+    "X": ["X", "XA", "XE", "XI"],
+    "Y": ["Y", "YA", "YO"],
+    "Z": ["Z", "ZA", "ZE", "ZI", "ZO", "ZU"]
+   // Agrega más letras según sea necesario
+  };
+
+  // Método para reproducir voz
+void _speak(String text) async {
+  await flutterTts.speak(text);
+}
+
+// Mostrar cuadrícula flotante
+void _showFloatingGrid(String letter) {
+  setState(() {
+    letraSeleccionada = letter;
+    isGridVisible = true;
+  });
+}
+
+// Cerrar cuadrícula flotante
+void _closeFloatingGrid() {
+  setState(() {
+    isGridVisible = false;
+  });
+}
+
+@override
+Widget build(BuildContext context) {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final double maxWidth = constraints.maxWidth;
+      final double maxHeight = constraints.maxHeight;
+
+      // Tamaños relativos para la cuadrícula flotante
+      final double floatingGridHeight = maxHeight * 0.7;
+      final double gridPadding = maxWidth * 0.025;
+      final double gridBorderRadius = maxWidth * 0.025;
+      final double gridSpacing = maxWidth * 0.02;
+      final double closeButtonSize = maxWidth * 0.10;
+
+      return Stack(
+        children: [
+          _buildKeyboard(),
+          if (isGridVisible)
+            Positioned(
+              top: gridPadding,
+              left: gridPadding,
+              right: gridPadding,
+              child: Material(
+                elevation: maxWidth * 0.005,
+                borderRadius: BorderRadius.circular(gridBorderRadius),
+                child: Container(
+                  height: floatingGridHeight,
+                  padding: EdgeInsets.all(gridPadding),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(gridBorderRadius),
+                  ),
+                  child: Stack(
+                    children: [
+                      GridView.builder(
+                        shrinkWrap: true,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          crossAxisSpacing: gridSpacing,
+                          mainAxisSpacing: gridSpacing,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: silabasPorLetra[letraSeleccionada]?.length ?? 0,
+                        itemBuilder: (context, index) {
+                          final silaba = silabasPorLetra[letraSeleccionada]![index];
+                          return Draggable<String>(
+                            data: silaba,
+                            feedback: Material(
+                              child: Container(
+                                padding: EdgeInsets.all(gridPadding),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(gridBorderRadius),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    silaba,
+                                    style: TextStyle(fontSize: maxWidth * 0.035, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            childWhenDragging: Container(),
+                            child: GestureDetector(
+                              onTap: () {
+                                // Solo leer la sílaba en voz alta
+                                _speak(silaba);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(gridPadding),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  borderRadius: BorderRadius.circular(gridBorderRadius),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    silaba,
+                                    style: TextStyle(fontSize: maxWidth * 0.035, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      // Botón de cierre: redondo, rojo y posicionado en la esquina inferior derecha
+                      Positioned(
+                        bottom: gridPadding,
+                        right: gridPadding,
+                        child: GestureDetector(
+                          onTap: _closeFloatingGrid,
+                          child: Container(
+                            width: closeButtonSize,
+                            height: closeButtonSize,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  spreadRadius: maxWidth * 0.005,
+                                  blurRadius: maxWidth * 0.01,
+                                  offset: Offset(0, maxHeight * 0.005),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: maxWidth * 0.08,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+// Construir el teclado principal
+Widget _buildKeyboard() {
+  final double screenWidth = MediaQuery.of(context).size.width;
+  final double keyboardPadding = screenWidth * 0.04;
+  final double keyboardSpacing = screenWidth * 0.02;
+  final double keyboardBorderRadius = screenWidth * 0.025;
+  final List<String> letras = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+  ];
+
+  return GridView.builder(
+    padding: EdgeInsets.all(keyboardPadding),
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 5,
+      crossAxisSpacing: keyboardSpacing,
+      mainAxisSpacing: keyboardSpacing,
+      childAspectRatio: 1.5,
+    ),
+    itemCount: letras.length,
+    itemBuilder: (context, index) {
+      final letra = letras[index];
+      return GestureDetector(
+        onTap: () {
+          // Solo leer la letra en voz alta
+          _speak(letra);
+          _showFloatingGrid(letra);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.orange,
+            borderRadius: BorderRadius.circular(keyboardBorderRadius),
+          ),
+          child: Center(
+            child: Text(
+              letra,
+              style: TextStyle(fontSize: screenWidth * 0.05, color: Colors.white),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+lib/screens/metodo3_screen.dart
+import 'package:flutter/material.dart';
+import '../widgets/custom_app_bar.dart';
+
+class Metodo3Screen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CustomAppBar(title: 'Describe la Imagen'),
+      body: Center(
+        child: Text('Pantalla del Método 3'),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+lib/widgets/custom_app_bar.dart
+import 'package:flutter/material.dart';
+
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+
+  CustomAppBar({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(title),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+}
+
+
+
+
+
+
+
+
+
+
+
+lib/widgets/custom_navigation_bar.dart
+import 'package:flutter/material.dart';
+
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final VoidCallback onOptionsPress;
+
+  CustomAppBar({
+    required this.title,
+    required this.onOptionsPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(title),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.more_vert),
+          onPressed: onOptionsPress,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+lib/main.dart
+import 'package:flutter/material.dart';
+import 'screens/bienvenida_screen.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Rubi Aprende a Leer',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: Builder(
+        builder: (context) {
+          // Usamos Builder para acceder al contexto y obtener MediaQuery
+          final screenWidth = MediaQuery.of(context).size.width;
+          final screenHeight = MediaQuery.of(context).size.height;
+
+          return BienvenidaScreen();
+        },
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+test/widget_test.dart
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:aprender_a_leer/main.dart'; // Asegúrate de que esta ruta sea correcta
+
+void main() {
+  testWidgets('BienvenidaScreen displays correctly', (WidgetTester tester) async {
+    // Construye la aplicación y activa un frame.
+    await tester.pumpWidget(MyApp()); // Eliminamos 'const' aquí
+
+    // Verifica que el texto "Rubi" está presente en la pantalla.
+    expect(find.text('Rubi'), findsOneWidget);
+
+    // Verifica que el texto "Aprende a leer" está presente en la pantalla.
+    expect(find.text('Aprende a leer'), findsOneWidget);
+
+    // Verifica que el botón "Comencemos" está presente.
+    expect(find.widgetWithText(ElevatedButton, 'Comencemos'), findsOneWidget);
+
+    // Simula un clic en el botón "Comencemos".
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Comencemos'));
+    await tester.pumpAndSettle(); // Espera a que la navegación termine.
+
+    // Verifica que se ha navegado a la pantalla del menú principal.
+    expect(find.text('Menú Principal'), findsOneWidget);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+pubspec.yaml
+name: aprender_a_leer
+description: Una aplicación para aprender a leer usando sílabas, palabras e imágenes.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.0.15
+  flutter_tts: ^3.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  
+  # Si tienes imágenes o assets, descomenta y configura esta sección
+  # assets:
+  #   - assets/images/
+  #   - assets/sounds/
+
+  # Si usas fuentes personalizadas, descomenta y configura esta sección
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: assets/fonts/CustomFont-Regular.ttf
+  #       - asset: assets/fonts/CustomFont-Bold.ttf
+  #         weight: 700
+
+
+
+
+
+
+
+
+
+
+
+
+

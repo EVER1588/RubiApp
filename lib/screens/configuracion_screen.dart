@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../services/tts_manager.dart';
 
 class ConfiguracionScreen extends StatefulWidget {
   @override
@@ -8,7 +8,7 @@ class ConfiguracionScreen extends StatefulWidget {
 }
 
 class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
-  final FlutterTts _flutterTts = FlutterTts();
+  // Eliminamos FlutterTts local y usamos TtsManager centralizado
 
   // Velocidad de lectura
   double _ttsSpeed = 0.5; // Normal por defecto
@@ -70,8 +70,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     setState(() {
       _ttsSpeed = speed;
       _selectedSpeed = _getSpeedLabel(speed);
-      _flutterTts.setSpeechRate(speed);
-      _saveSettings();
+      TtsManager.instance.setSpeechRate(speed); // Usamos el manager para actualizar y persistir
     });
   }
 
@@ -85,7 +84,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   void _toggleTtsMute() {
     setState(() {
       _isTtsMuted = !_isTtsMuted;
-      _flutterTts.setVolume(_isTtsMuted ? 0.0 : _ttsVolume);
+      TtsManager.instance.setVolume(_isTtsMuted ? 0.0 : _ttsVolume); // Usamos el manager
       _saveSettings();
     });
   }
@@ -170,7 +169,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                     onChanged: (value) {
                       setState(() {
                         _ttsVolume = value;
-                        _flutterTts.setVolume(value);
+                        TtsManager.instance.setVolume(value); // Sincronizar con el manager
                         _saveSettings();
                       });
                     },
