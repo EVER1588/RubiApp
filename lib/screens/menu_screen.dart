@@ -3,13 +3,18 @@ import 'metodo1_screen.dart';
 import 'metodo2_screen.dart';
 import 'metodo3_screen.dart';
 import 'configuracion_screen.dart';
-import '../widgets/custom_app_bar.dart';
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
 
 class MenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Menú Principal'),
+      appBar: CustomBar(
+        
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
+      ),
       body: Stack(
         children: [
           Center(
@@ -32,20 +37,6 @@ class MenuScreen extends StatelessWidget {
                 SizedBox(height: 20),
                 _buildBotonMetodo(
                   context,
-                  'Formando Palabras',
-                  Colors.deepOrange,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Metodo2Screen(),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(height: 20),
-                _buildBotonMetodo(
-                  context,
                   'Describe la Imagen',
                   Colors.teal,
                   () {
@@ -53,6 +44,20 @@ class MenuScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => Metodo3Screen(),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                _buildBotonMetodo(
+                  context,
+                  'Formando Palabras',
+                  Colors.deepOrange,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Metodo2Screen(),
                       ),
                     );
                   },

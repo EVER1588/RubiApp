@@ -11,8 +11,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^2.0.15
-  flutter_tts: ^3.5.3
+  video_player: ^2.9.5
+  shared_preferences: ^2.5.3
+  flutter_tts: ^4.2.2  # Actualizar a la última versión
+  uuid: ^3.0.7 
 
 dev_dependencies:
   flutter_test:
@@ -21,10 +23,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
-  # Si tienes imágenes o assets, descomenta y configura esta sección
-  # assets:
-  #   - assets/images/
-  #   - assets/sounds/
+  assets:
+    - lib/utils/images/
+    - lib/utils/images/animales/
+    - lib/utils/images/frutas/
+    - lib/utils/gifs/    # Cambiar videos por gifs
 
   # Si usas fuentes personalizadas, descomenta y configura esta sección
   # fonts:

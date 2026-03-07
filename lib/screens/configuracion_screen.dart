@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+<<<<<<< HEAD
 import '../services/tts_manager.dart';
+=======
+import 'package:flutter_tts/flutter_tts.dart';
+import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
+>>>>>>> 4d4801eb5df27b08381da363d79fb5703bcc6225
 
 class ConfiguracionScreen extends StatefulWidget {
   @override
@@ -92,9 +97,11 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Configuración'),
-        backgroundColor: _primaryColor,
+      appBar: CustomBar(
+        
+        onBackPressed: () {
+          Navigator.pop(context); // Acción al presionar el botón de retroceso
+        },
       ),
       body: ListView(
         padding: EdgeInsets.all(16),
