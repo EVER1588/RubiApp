@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'formandopalabras_teclado_screen.dart';
+import '../services/tts_manager.dart';
+import '../widgets/boton_de_borrar.dart';
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -18,6 +20,17 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
   // Función para verificar si una cadena es un prefijo válido
   bool _isValidPrefix(String prefix) {
     return _validWords.any((word) => word.startsWith(prefix));
+  }
+
+  // Método para reproducir voz usando TtsManager
+  Future<void> _speak(String text) async {
+    await TtsManager.instance.speak(text);
+  }
+
+  // Convierte sílabas a minúsculas (excepto la primera letra) para lectura natural
+  String _convertSyllableForSpeech(String syllable) {
+    if (syllable.isEmpty) return syllable;
+    return syllable[0] + syllable.substring(1).toLowerCase();
   }
 
   @override
@@ -101,30 +114,10 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
                   Positioned(
                     bottom: screenHeight * 0.005,
                     right: screenWidth * 0.025,
-                    child: DragTarget<String>(
-                      builder: (context, candidateData, rejectedData) {
-                        return Container(
-                          height: screenWidth * 0.15,
-                          width: screenWidth * 0.15,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[800],
-                            borderRadius: BorderRadius.circular(screenWidth * 0.025),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                spreadRadius: screenWidth * 0.005,
-                                blurRadius: screenWidth * 0.01,
-                                offset: Offset(0, screenHeight * 0.005),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.delete, color: Colors.white, size: 25),
-                          ),
-                        );
-                      },
-                      onWillAccept: (data) => true,
-                      onAccept: (String silaba) {
+                    child: BotonDeBorrar(
+                      anchoP: screenWidth,
+                      altoP: screenHeight,
+                      alBorrar: (silaba) {
                         setState(() => selectedSilabas.remove(silaba));
                       },
                     ),
@@ -193,18 +186,24 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
       ),
       child: DragTarget<String>(
         builder: (context, candidateData, rejectedData) {
-          return Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.025,
-              vertical: screenHeight * 0.005,
-            ),
-            decoration: BoxDecoration(
-              color: isValidWord ? Colors.green : (isValidPrefix ? Colors.orange : Colors.grey),
-              borderRadius: BorderRadius.circular(screenWidth * 0.025),
-            ),
-            child: Text(
-              silaba,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          return GestureDetector(
+            onTap: () {
+              // Leer la sílaba al tocarla
+              _speak(_convertSyllableForSpeech(silaba));
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.025,
+                vertical: screenHeight * 0.005,
+              ),
+              decoration: BoxDecoration(
+                color: isValidWord ? Colors.green : (isValidPrefix ? Colors.orange : Colors.grey),
+                borderRadius: BorderRadius.circular(screenWidth * 0.025),
+              ),
+              child: Text(
+                silaba,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
             ),
           );
         },

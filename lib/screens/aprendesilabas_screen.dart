@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/tts_manager.dart';
+import '../widgets/boton_de_borrar.dart';
 
 class Metodo1Screen extends StatefulWidget {
   @override
@@ -200,6 +201,43 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     _resetActiveLetters(); // Restaurar todas las letras
   }
 
+  // Maneja la eliminación de una sílaba (más robusto que solo actualizar activeLetters)
+  void _handleDeleteSyllable(int indexABorrar) {
+    setState(() {
+      // Si solo hay un bloque, limpiarlo en lugar de eliminarlo
+      if (_syllables.length == 1) {
+        _syllables[0] = '';
+        _showCurrentLooseLetters = true;
+        _currentBlockIndex = 0;
+        _resetActiveLetters(); // Aquí sí reseteamos porque está vacío
+      } else {
+        // Eliminar el bloque en el índice especificado
+        _syllables.removeAt(indexABorrar);
+        
+        // Ajustar el índice actual si es necesario
+        if (_currentBlockIndex >= _syllables.length) {
+          _currentBlockIndex = _syllables.length - 1;
+        }
+        
+        // Si se elimina el bloque actual, limpiar el estado
+        if (indexABorrar == _currentBlockIndex) {
+          _syllables[_currentBlockIndex] = '';
+          _showCurrentLooseLetters = true;
+          _resetActiveLetters(); // Reseteamos porque vaciamos el bloque actual
+        } else {
+          // SI NO se elimina el bloque actual, MANTENER su estado actual
+          // Actualizar las letras activas basadas en lo que ya estés escribiendo
+          if (_syllables[_currentBlockIndex].isEmpty) {
+            _resetActiveLetters(); // Si está vacío, activar todas
+          } else {
+            // Si tiene contenido, mantener las letras activas válidas para esa entrada
+            _updateActiveLetters(_syllables[_currentBlockIndex]);
+          }
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,8 +258,8 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
             child: Container(
               width: double.infinity,
               height: double.infinity, // Expandir al máximo disponible
-              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              padding: EdgeInsets.only(left: 8, right: 4, top: 16, bottom: 16), // Reducido padding derecho
+              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: EdgeInsets.only(left: 4, right: 4, top: 4, bottom: 4), // Reducido padding derecho
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.blueAccent, width: 3),
                 borderRadius: BorderRadius.circular(15),
@@ -234,55 +272,97 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
                   ),
                 ],
               ),
-              child: Scrollbar(
-                controller: _scrollController,
-                thickness: 8.0, // Grosor de la barra
-                radius: Radius.circular(4.0), // Bordes redondeados
-                thumbVisibility: true, // La barra siempre visible, no se oculta
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Wrap(
-                  spacing: 12.0,
-                  runSpacing: 12.0,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    // Mostrar sílabas completadas como bloques verdes
-                    // PERO NO mostrar el bloque actual si aún estamos mostrando letras sueltas
-                    ..._syllables.asMap().entries.where((entry) {
-                      final isValid = _validSyllables.contains(entry.value);
-                      final isCurrentBlock = entry.key == _currentBlockIndex;
-                      // Mostrar solo si: es válido Y (NO es el bloque actual O ya ocultamos las letras sueltas)
-                      return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
-                    }).map((entry) {
-                      return Chip(
-                        label: Text(
-                          entry.value,
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        backgroundColor: Colors.green,
-                        labelStyle: TextStyle(color: Colors.white),
-                      );
-                    }).toList(),
-                    
-                    // Mostrar letras de la sílaba actual como elementos sueltos SOLO si debe mostrarlas
-                    if (_showCurrentLooseLetters && _syllables[_currentBlockIndex].isNotEmpty)
-                      ..._syllables[_currentBlockIndex].split('').map((letter) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 2),
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey.withOpacity(0.3),
-                          ),
-                          child: Text(
-                            letter,
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                        );
-                      }).toList(),
-                  ],
-                ),
-              ),
+              child: Stack(
+                children: [
+                  Scrollbar(
+                    controller: _scrollController,
+                    thickness: 8.0, // Grosor de la barra
+                    radius: Radius.circular(4.0), // Bordes redondeados
+                    thumbVisibility: true, // La barra siempre visible, no se oculta
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Wrap(
+                      spacing: 12.0,
+                      runSpacing: 12.0,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        // Mostrar sílabas completadas como bloques verdes
+                        // PERO NO mostrar el bloque actual si aún estamos mostrando letras sueltas
+                        ..._syllables.asMap().entries.where((entry) {
+                          final isValid = _validSyllables.contains(entry.value);
+                          final isCurrentBlock = entry.key == _currentBlockIndex;
+                          // Mostrar solo si: es válido Y (NO es el bloque actual O ya ocultamos las letras sueltas)
+                          return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
+                        }).map((entry) {
+                          return Draggable<Object>(
+                            data: {'index': entry.key, 'silaba': entry.value},
+                            feedback: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Material(
+                                elevation: 8,
+                                child: Chip(
+                                  label: Text(
+                                    entry.value,
+                                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  labelStyle: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            childWhenDragging: SizedBox.shrink(), // Desaparece cuando arrastras
+                            child: GestureDetector(
+                              onTap: () {
+                                // Leer la sílaba al tocarla con pronunciación natural
+                                _speak(_convertSyllableForSpeech(entry.value));
+                              },
+                              child: Chip(
+                                label: Text(
+                                  entry.value,
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                ),
+                                backgroundColor: Colors.green,
+                                labelStyle: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        
+                        // Mostrar letras de la sílaba actual como elementos sueltos SOLO si debe mostrarlas
+                        if (_showCurrentLooseLetters && _syllables[_currentBlockIndex].isNotEmpty)
+                          ..._syllables[_currentBlockIndex].split('').map((letter) {
+                            return Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey, width: 2),
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey.withOpacity(0.3),
+                              ),
+                              child: Text(
+                                letter,
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                            );
+                          }).toList(),
+                      ],
+                    ),
+                  ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: BotonDeBorrar(
+                      anchoP: MediaQuery.of(context).size.width,
+                      altoP: MediaQuery.of(context).size.height,
+                      alBorrar: (data) {
+                        if (data is Map && data.containsKey('index')) {
+                          int indexABorrar = data['index'];
+                          _handleDeleteSyllable(indexABorrar);
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
