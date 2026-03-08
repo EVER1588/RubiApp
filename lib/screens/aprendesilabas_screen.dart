@@ -10,6 +10,12 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   // Eliminamos FlutterTts local y usamos TtsManager.instance
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
+  
+  // Controller para el scroll del contenedor de sílabas
+  late ScrollController _scrollController;
+  
+  // Controlar si mostrar letras sueltas o bloque formado
+  bool _showCurrentLooseLetters = true;
 
   // Lista de letras del alfabeto español
   final List<String> _letters = [
@@ -62,12 +68,26 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     TtsManager.instance.init(); // Inicializamos el manager centralizado
+  }
+  
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   // Reproduce el texto usando TtsManager
   Future<void> _speak(String text) async {
     await TtsManager.instance.speak(text);
+  }
+
+  // Convierte sílabas a minúsculas (excepto la primera letra) para lectura natural
+  String _convertSyllableForSpeech(String syllable) {
+    if (syllable.isEmpty) return syllable;
+    // Primera letra mayúscula, resto minúsculas
+    return syllable[0] + syllable.substring(1).toLowerCase();
   }
 
   // Agrega una letra al bloque actual y valida la sílaba
@@ -76,21 +96,56 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
 
     setState(() {
       _syllables[_currentBlockIndex] += letter; // Agregar la letra al bloque actual
+      _showCurrentLooseLetters = true; // Mostrar letras sueltas mientras escribes
+      
+      // Validar y actualizar el estado del teclado DENTRO del setState
+      if (_syllables[_currentBlockIndex].length == 1) {
+        _updateActiveLetters(_syllables[_currentBlockIndex]);
+      } else if (_syllables[_currentBlockIndex].length >= 2) {
+        if (_validSyllables.contains(_syllables[_currentBlockIndex])) {
+          // La sílaba es válida, desactivar todas las letras mientras se reproduce
+          _activeLetters.updateAll((key, value) => false);
+        } else {
+          // La sílaba aún no está completa, actualizar letras válidas
+          _updateActiveLetters(_syllables[_currentBlockIndex]);
+        }
+      }
     });
 
     await _speak(letter); // Reproduce el sonido de la letra
 
-    // Validar y actualizar el estado del teclado
-    if (_syllables[_currentBlockIndex].length == 1) {
-      _updateActiveLetters(_syllables[_currentBlockIndex]);
-    } else if (_syllables[_currentBlockIndex].length >= 2) {
-      if (_validSyllables.contains(_syllables[_currentBlockIndex])) {
-        await _speak(_syllables[_currentBlockIndex]); // Reproduce la sílaba completa
-        _resetActiveLetters(); // Restaurar todas las letras después de formar una sílaba
-        _moveToNextBlock(); // Moverse al siguiente bloque
-      } else {
-        _updateActiveLetters(_syllables[_currentBlockIndex]);
-      }
+    // Si la sílaba es válida, seguir el nuevo flujo
+    if (_syllables[_currentBlockIndex].length >= 2 && 
+        _validSyllables.contains(_syllables[_currentBlockIndex])) {
+      
+      // PASO 1: Ya se leyó la última letra arriba, esperar un momento
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Guarda la sílaba formada
+      String formedSyllable = _syllables[_currentBlockIndex];
+      
+      // PASO 2: OCULTAR LETRAS Y MOSTRAR BLOQUE
+      setState(() {
+        _showCurrentLooseLetters = false;
+      });
+      
+      // Pequeña pausa para que se vea el cambio visual
+      await Future.delayed(Duration(milliseconds: 100));
+      
+      // LEER LA SÍLABA MIENTRAS SE VE EL BLOQUE VERDE
+      // Convertir a minúsculas para que suene como una palabra, no como siglas
+      await _speak(_convertSyllableForSpeech(formedSyllable));
+      
+      // Esperar un momento después de leer
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Mover al siguiente bloque
+      _moveToNextBlock();
+      
+      // Volver a mostrar letras sueltas para la siguiente sílaba
+      setState(() {
+        _showCurrentLooseLetters = true;
+      });
     }
   }
 
@@ -114,6 +169,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     setState(() {
       _syllables.add(''); // Agregar un nuevo bloque vacío
       _currentBlockIndex++; // Incrementar el índice del bloque actual
+      _resetActiveLetters(); // Reactivar todas las letras para el nuevo bloque
     });
   }
 
@@ -123,9 +179,15 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
       setState(() {
         _syllables[_currentBlockIndex] =
             _syllables[_currentBlockIndex].substring(0, _syllables[_currentBlockIndex].length - 1);
+        
+        // Actualizar letras activas según lo que queda
+        if (_syllables[_currentBlockIndex].isEmpty) {
+          _resetActiveLetters(); // Si está vacío, activar todas
+        } else {
+          _updateActiveLetters(_syllables[_currentBlockIndex]); // Si hay contenido, validar
+        }
       });
     }
-    _resetActiveLetters(); // Restaurar todas las letras si se borra algo
   }
 
   // Limpia toda la sílaba formada
@@ -133,6 +195,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     setState(() {
       _syllables = ['']; // Reiniciar la lista de bloques
       _currentBlockIndex = 0; // Reiniciar el índice del bloque actual
+      _showCurrentLooseLetters = true; // Mostrar letras sueltas de nuevo
     });
     _resetActiveLetters(); // Restaurar todas las letras
   }
@@ -151,27 +214,82 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
       ),
       body: Column(
         children: [
-          // Renglón superior: Muestra los bloques de sílabas
-          Padding(
-            padding: EdgeInsets.all(20),
-            child: Wrap(
-              spacing: 8.0, // Espacio entre bloques
-              children: _syllables.map((syllable) {
-                final isValid = _validSyllables.contains(syllable);
-                return Chip(
-                  label: Text(
-                    syllable.isNotEmpty ? syllable : '_',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          // Zona de Sílabas - Contenedor responsivo con Flex
+          Flexible(
+            flex: 15, // Toma 2 partes del espacio disponible
+            child: Container(
+              width: double.infinity,
+              height: double.infinity, // Expandir al máximo disponible
+              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: EdgeInsets.only(left: 8, right: 4, top: 16, bottom: 16), // Reducido padding derecho
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blueAccent, width: 3),
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.blue.withOpacity(0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
                   ),
-                  backgroundColor: isValid ? Colors.green : Colors.grey,
-                  labelStyle: TextStyle(color: Colors.white),
-                );
-              }).toList(),
+                ],
+              ),
+              child: Scrollbar(
+                controller: _scrollController,
+                thickness: 8.0, // Grosor de la barra
+                radius: Radius.circular(4.0), // Bordes redondeados
+                thumbVisibility: true, // La barra siempre visible, no se oculta
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Wrap(
+                  spacing: 12.0,
+                  runSpacing: 12.0,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    // Mostrar sílabas completadas como bloques verdes
+                    // PERO NO mostrar el bloque actual si aún estamos mostrando letras sueltas
+                    ..._syllables.asMap().entries.where((entry) {
+                      final isValid = _validSyllables.contains(entry.value);
+                      final isCurrentBlock = entry.key == _currentBlockIndex;
+                      // Mostrar solo si: es válido Y (NO es el bloque actual O ya ocultamos las letras sueltas)
+                      return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
+                    }).map((entry) {
+                      return Chip(
+                        label: Text(
+                          entry.value,
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        backgroundColor: Colors.green,
+                        labelStyle: TextStyle(color: Colors.white),
+                      );
+                    }).toList(),
+                    
+                    // Mostrar letras de la sílaba actual como elementos sueltos SOLO si debe mostrarlas
+                    if (_showCurrentLooseLetters && _syllables[_currentBlockIndex].isNotEmpty)
+                      ..._syllables[_currentBlockIndex].split('').map((letter) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey, width: 2),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
+                          child: Text(
+                            letter,
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      }).toList(),
+                  ],
+                ),
+              ),
+              ),
             ),
           ),
 
-          // Teclado de letras
-          Expanded(
+          // Teclado de letras - Flex responsivo
+          Flexible(
+            flex: 30, // Toma 3 partes del espacio disponible (más grande que sílabas)
             child: GridView.builder(
               padding: EdgeInsets.all(10),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

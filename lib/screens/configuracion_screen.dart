@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-<<<<<<< HEAD
+import '../constants/custombar_screen.dart';
 import '../services/tts_manager.dart';
-=======
-import 'package:flutter_tts/flutter_tts.dart';
-import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
->>>>>>> 4d4801eb5df27b08381da363d79fb5703bcc6225
 
 class ConfiguracionScreen extends StatefulWidget {
   @override
@@ -13,8 +9,6 @@ class ConfiguracionScreen extends StatefulWidget {
 }
 
 class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
-  // Eliminamos FlutterTts local y usamos TtsManager centralizado
-
   // Velocidad de lectura
   double _ttsSpeed = 0.5; // Normal por defecto
   String _selectedSpeed = 'Normal'; // Botón seleccionado
@@ -75,7 +69,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     setState(() {
       _ttsSpeed = speed;
       _selectedSpeed = _getSpeedLabel(speed);
-      TtsManager.instance.setSpeechRate(speed); // Usamos el manager para actualizar y persistir
+      TtsManager.instance.setSpeechRate(speed);
+      _saveSettings();
     });
   }
 
@@ -89,7 +84,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   void _toggleTtsMute() {
     setState(() {
       _isTtsMuted = !_isTtsMuted;
-      TtsManager.instance.setVolume(_isTtsMuted ? 0.0 : _ttsVolume); // Usamos el manager
+      TtsManager.instance.setVolume(_isTtsMuted ? 0.0 : _ttsVolume);
       _saveSettings();
     });
   }
@@ -98,9 +93,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        
         onBackPressed: () {
-          Navigator.pop(context); // Acción al presionar el botón de retroceso
+          Navigator.pop(context);
         },
       ),
       body: ListView(
@@ -176,7 +170,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
                     onChanged: (value) {
                       setState(() {
                         _ttsVolume = value;
-                        TtsManager.instance.setVolume(value); // Sincronizar con el manager
+                        TtsManager.instance.setVolume(value);
                         _saveSettings();
                       });
                     },

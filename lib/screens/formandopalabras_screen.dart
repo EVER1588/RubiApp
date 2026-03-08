@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'metodo2teclado_screen.dart';
+import 'formandopalabras_teclado_screen.dart';
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);

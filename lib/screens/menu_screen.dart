@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'metodo1_screen.dart';
-import 'metodo2_screen.dart';
+import 'aprendesilabas_screen.dart';
+import 'formandopalabras_screen.dart';
+import 'formandopalabras_teclado_screen.dart';
 import 'metodo3_screen.dart';
 import 'configuracion_screen.dart';
-import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
+import '../constants/custombar_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
-        
         onBackPressed: () {
-          Navigator.pop(context); // Acción al presionar el botón de retroceso
+          Navigator.pop(context);
         },
       ),
       body: Stack(

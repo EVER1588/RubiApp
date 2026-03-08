@@ -34,12 +34,8 @@ android {
             abiFilters.add("x86_64")       // Para emuladores x86_64
         }
     }
+}
 
-<<<<<<< HEAD
 flutter {
     source = "../.."
 }
-=======
-    // Resto de la configuración...
-}
->>>>>>> 4d4801eb5df27b08381da363d79fb5703bcc6225
