@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../services/tts_manager.dart';
 import '../widgets/boton_de_borrar.dart';
@@ -7,7 +8,7 @@ class Metodo1Screen extends StatefulWidget {
   _Metodo1ScreenState createState() => _Metodo1ScreenState();
 }
 
-class _Metodo1ScreenState extends State<Metodo1Screen> {
+class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateMixin {
   // Eliminamos FlutterTts local y usamos TtsManager.instance
   List<String> _syllables = ['']; // Lista para almacenar bloques de sílabas
   int _currentBlockIndex = 0; // Índice del bloque actual
@@ -17,6 +18,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   
   // Controlar si mostrar letras sueltas o bloque formado
   bool _showCurrentLooseLetters = true;
+
+  // Keys para la animación de letras volando
+  final GlobalKey _syllableContainerKey = GlobalKey();
+  final Map<String, GlobalKey> _letterKeys = {};
 
   // Lista de letras del alfabeto español
   final List<String> _letters = [
@@ -80,6 +85,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     super.initState();
     _scrollController = ScrollController();
     TtsManager.instance.init(); // Inicializamos el manager centralizado
+    // Inicializar GlobalKeys para cada letra del teclado
+    for (String letter in _letters) {
+      _letterKeys[letter] = GlobalKey();
+    }
   }
   
   @override
@@ -91,6 +100,102 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   // Reproduce el texto usando TtsManager
   Future<void> _speak(String text) async {
     await TtsManager.instance.speak(text);
+  }
+
+  // Anima una letra volando desde el teclado hasta el contenedor de sílabas
+  Future<void> _flyLetterAnimation(String letter) async {
+    final sourceKey = _letterKeys[letter];
+    if (sourceKey?.currentContext == null ||
+        _syllableContainerKey.currentContext == null ||
+        !mounted) {
+      return;
+    }
+
+    final sourceBox = sourceKey!.currentContext!.findRenderObject() as RenderBox;
+    final sourceSize = sourceBox.size;
+    final sourcePos = sourceBox.localToGlobal(
+      Offset(sourceSize.width / 2, sourceSize.height / 2),
+    );
+
+    final targetBox =
+        _syllableContainerKey.currentContext!.findRenderObject() as RenderBox;
+    final targetSize = targetBox.size;
+    final targetPos = targetBox.localToGlobal(
+      Offset(targetSize.width / 2, targetSize.height / 2),
+    );
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final arcHeight = -screenHeight * 0.1;
+
+    final controller = AnimationController(
+      duration: Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    final curved = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeInOutCubic,
+    );
+
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return AnimatedBuilder(
+          animation: curved,
+          builder: (context, child) {
+            final t = curved.value;
+            final dx = sourcePos.dx + (targetPos.dx - sourcePos.dx) * t;
+            final dy = sourcePos.dy +
+                (targetPos.dy - sourcePos.dy) * t +
+                arcHeight * math.sin(t * math.pi);
+            final scale = 1.0 + 0.3 * math.sin(t * math.pi);
+
+            return Positioned(
+              left: dx - 20,
+              top: dy - 20,
+              child: Transform.scale(
+                scale: scale,
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.5),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      letter,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    try {
+      overlay.insert(entry);
+      await controller.forward();
+    } finally {
+      entry.remove();
+      controller.dispose();
+    }
   }
 
   // Mapa de sustituciones fonéticas para sílabas que el TTS lee como siglas
@@ -132,22 +237,29 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
   void _addLetter(String letter) async {
     if (!_activeLetters[letter]!) return; // Ignorar letras desactivadas
 
+    // Pre-calcular contenido futuro para actualizar teclado inmediatamente
+    String futureContent = _syllables[_currentBlockIndex] + letter;
+
+    // Actualizar teclado antes de la animación (feedback visual inmediato)
     setState(() {
-      _syllables[_currentBlockIndex] += letter; // Agregar la letra al bloque actual
-      _showCurrentLooseLetters = true; // Mostrar letras sueltas mientras escribes
-      
-      // Validar y actualizar el estado del teclado DENTRO del setState
-      if (_syllables[_currentBlockIndex].length == 1) {
-        _updateActiveLetters(_syllables[_currentBlockIndex]);
-      } else if (_syllables[_currentBlockIndex].length >= 2) {
-        if (_validSyllables.contains(_syllables[_currentBlockIndex])) {
-          // La sílaba es válida, desactivar todas las letras mientras se reproduce
+      if (futureContent.length == 1) {
+        _updateActiveLetters(futureContent);
+      } else if (futureContent.length >= 2) {
+        if (_validSyllables.contains(futureContent)) {
           _activeLetters.updateAll((key, value) => false);
         } else {
-          // La sílaba aún no está completa, actualizar letras válidas
-          _updateActiveLetters(_syllables[_currentBlockIndex]);
+          _updateActiveLetters(futureContent);
         }
       }
+    });
+
+    // Animar la letra volando desde el teclado al contenedor
+    await _flyLetterAnimation(letter);
+
+    // Agregar la letra al bloque actual (aparece en el contenedor)
+    setState(() {
+      _syllables[_currentBlockIndex] += letter;
+      _showCurrentLooseLetters = true;
     });
 
     await _speak(letter); // Reproduce el sonido de la letra
@@ -228,14 +340,74 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
     }
   }
 
-  // Limpia toda la sílaba formada
+  // Limpia toda la sílaba formada - muestra confirmación antes
   void _clearSyllable() {
+    // No mostrar diálogo si no hay sílabas que borrar
+    final tieneContenido = _syllables.any((s) => s.isNotEmpty);
+    if (!tieneContenido) {
+      _speak('Primero creemos algunas sílabas');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Align(
+            alignment: Alignment.center,
+            child: Text('¿Eliminar todas las sílabas?'),
+          ),
+          content: Text('¿Estás seguro de que deseas eliminar todas las sílabas?'),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+                foregroundColor: Colors.white
+              ),
+              child: Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white
+              ),
+              child: Text('Eliminar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _confirmClearSyllable();
+              },
+            ),
+          ],
+        );
+      },
+    );
+    // Reproducir el texto del diálogo después de que se muestre el dialogo de Limpiar
+    Future.delayed(Duration(milliseconds: 300), () {
+      _speak('¿Con el botón rojo eliminarás todas las sílabas?');
+    });
+  }
+
+  // Ejecuta la eliminación confirmada de todas las sílabas
+  void _confirmClearSyllable() {
     setState(() {
       _syllables = ['']; // Reiniciar la lista de bloques
       _currentBlockIndex = 0; // Reiniciar el índice del bloque actual
       _showCurrentLooseLetters = true; // Mostrar letras sueltas de nuevo
     });
     _resetActiveLetters(); // Restaurar todas las letras
+  }
+
+  // Detecta si el dispositivo es una tablet basado en la relación de aspecto
+  bool _isTablet(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final size = mediaQuery.size;
+    final aspectRatio = size.longestSide / size.shortestSide;
+    // Tablets tienen relación de aspecto menor (más cercana a 1.33 o 1.6)
+    // Phones tienen relación mayor (típicamente > 1.8 en landscape)
+    return aspectRatio < 1.75;
   }
 
   // Maneja la eliminación de una sílaba (más robusto que solo actualizar activeLetters)
@@ -309,6 +481,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
           Flexible(
             flex: 15, // Toma 2 partes del espacio disponible
             child: Container(
+              key: _syllableContainerKey,
               width: double.infinity,
               height: double.infinity, // Expandir al máximo disponible
               margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -337,7 +510,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
                       child: Wrap(
                       spacing: 12.0,
                       runSpacing: 12.0,
-                      alignment: WrapAlignment.center,
+                      alignment: WrapAlignment.start,
                       children: [
                         // Mostrar sílabas completadas como bloques verdes
                         // PERO NO mostrar el bloque actual si aún estamos mostrando letras sueltas
@@ -401,18 +574,107 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
                     ),
                   ),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: BotonDeBorrar(
-                      anchoP: MediaQuery.of(context).size.width,
-                      altoP: MediaQuery.of(context).size.height,
-                      isLandscape: false,
-                      alBorrar: (data) {
+                ],
+              ),
+            ),
+          ),
+
+          // Fila de botones (Limpiar a la izquierda, Borrar a la derecha)
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.blue, width: 3),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.blue.withOpacity(0.05),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.lightBlueAccent.withOpacity(0.2),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3), // cambio de posición de la sombra
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                  // Botón Limpiar (izquierda)
+                  Expanded(
+                    flex: 3,
+                    child: SizedBox.expand(
+                      child: ElevatedButton(
+                        onPressed: _clearSyllable,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.all(0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Limpiar',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Espacio vacío entre botones
+                  Expanded(
+                    flex: 3,
+                    child: SizedBox(),
+                  ),
+                  // Botón Borrar (derecha)
+                  Expanded(
+                    flex: 5,
+                    child: DragTarget<Object>(
+                      onAccept: (data) {
                         if (data is Map && data.containsKey('index')) {
                           int indexABorrar = data['index'];
                           _handleDeleteSyllable(indexABorrar);
                         }
+                      },
+                      builder: (context, candidateData, rejectedData) {
+                        return SizedBox.expand(
+                          child: GestureDetector(
+                            onTap: () {
+                              final tieneContenido = _syllables.any((s) => s.isNotEmpty);
+                              if (tieneContenido) {
+                                _speak('Arrastra las sílabas hasta acá para borrarlas');
+                              } else {
+                                _speak('Forma sílabas con las letras para verlas aquí');
+                              }
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: candidateData.isNotEmpty ? Colors.red : Colors.grey,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                color: candidateData.isNotEmpty ? Colors.red.withOpacity(0.15) : const Color.fromARGB(255, 88, 88, 88),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Arrastra las\nsílabas hasta acá\npara borrarlas',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color.fromARGB(221, 255, 255, 255),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Icon(Icons.delete, size: 28, color: Colors.red),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -420,37 +682,37 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
               ),
             ),
           ),
+          ),
 
           // Teclado de letras - Flex responsivo
           Flexible(
-            flex: 30, // Toma 3 partes del espacio disponible (más grande que sílabas)
-            child: GridView.builder(
-              padding: EdgeInsets.all(10),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4, // 4 columnas
-                crossAxisSpacing: 10, // Espacio horizontal entre letras
-                mainAxisSpacing: 10, // Espacio vertical entre letras
-                childAspectRatio: 1.5, // Relación de aspecto de los botones
-              ),
-              itemCount: _letters.length,
-              itemBuilder: (context, index) {
-                return _buildLetterButton(_letters[index]);
-              },
-            ),
-          ),
-
-          // Botón de limpiar
-          Padding(
-            padding: EdgeInsets.all(10),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: _clearSyllable,
-                child: Text('Limpiar'), 
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white
-                ),
+            flex: 25,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const int crossAxisCount = 5;
+                  const double spacing = 8;
+                  const double pad = 8;
+                  final int rowCount = (_letters.length / crossAxisCount).ceil();
+                  final double cellWidth = (constraints.maxWidth - pad * 2 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+                  final double cellHeight = (constraints.maxHeight - pad * 2 - spacing * (rowCount - 1)) / rowCount;
+                  final double ratio = cellHeight > 0 ? cellWidth / cellHeight : 1.0;
+                  return GridView.builder(
+                    physics: NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.all(pad),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: ratio,
+                    ),
+                    itemCount: _letters.length,
+                    itemBuilder: (context, index) {
+                      return _buildLetterButton(_letters[index]);
+                    },
+                  );
+                },
               ),
             ),
           ),
@@ -460,13 +722,21 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
 
   // Layout en modo horizontal (landscape)
   Widget _buildLandscapeLayout() {
-    return Row(
-      children: [
-        // Columna de sílabas con título - Izquierda
-        Flexible(
-          flex: 4,
-          child: Column(
-            children: [
+    return Builder(
+      builder: (context) {
+        final isTablet = _isTablet(context);
+        return Row(
+          children: [
+            // Spacer para evitar cámara frontal en phones (solo en phones)
+            // Calcula dinámicamente basado en el ancho de pantalla (~4% del ancho)
+            if (!isTablet)
+              SizedBox(width: MediaQuery.of(context).size.width * 0.032),
+            
+            // Columna de sílabas con título - Izquierda
+            Expanded(
+              flex: 5,
+              child: Column(
+                children: [
               // Título con botón de retroceso
               Row(
                 children: [
@@ -493,9 +763,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     return Container(
+                      key: _syllableContainerKey,
                       width: constraints.maxWidth,
                       height: constraints.maxHeight,
-                      margin: EdgeInsets.only(left: 10, right: 1, top: 2, bottom: 16), // Más espacio a la derecha
+                      margin: EdgeInsets.only(left: 10, right: 1, top: 2, bottom: 8), // Más espacio a la derecha
                       padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.blueAccent, width: 3),
@@ -521,7 +792,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
                               child: Wrap(
                                 spacing: 12.0,
                                 runSpacing: 12.0,
-                                alignment: WrapAlignment.center,
+                                alignment: WrapAlignment.start,
                                 children: [
                                   ..._syllables.asMap().entries.where((entry) {
                                     final isValid = _validSyllables.contains(entry.value);
@@ -579,21 +850,6 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
                               ),
                             ),
                           ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: BotonDeBorrar(
-                              anchoP: MediaQuery.of(context).size.width,
-                              altoP: MediaQuery.of(context).size.height,
-                              isLandscape: true,
-                              alBorrar: (data) {
-                                if (data is Map && data.containsKey('index')) {
-                                  int indexABorrar = data['index'];
-                                  _handleDeleteSyllable(indexABorrar);
-                                }
-                              },
-                            ),
-                          ),
                         ],
                       ),
                     );
@@ -603,71 +859,138 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
             ],
           ),
         ),
-        // Teclado - Derecha
-        Flexible(
-          flex: 6,
-          child: Padding(
-            padding: EdgeInsets.all(8),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Calcular dinámicamente el aspect ratio
-                const int crossAxisCount = 5;
-                const double spacing = 8;
-                final int rowCount = (_letters.length / crossAxisCount).ceil();
-                
-                // Espacio disponible después de restar padding y spacing
-                final double availableWidth = constraints.maxWidth - 16 - (spacing * (crossAxisCount - 1));
-                final double availableHeight = constraints.maxHeight - 16 - (spacing * (rowCount - 1));
-                
-                // Tamaño de cada celda
-                final double cellWidth = availableWidth / crossAxisCount;
-                final double cellHeight = availableHeight / rowCount;
-                
-                // Aspect ratio dinámico
-                final double aspectRatio = cellWidth / cellHeight;
-                
-                return Stack(
-                  children: [
-                    GridView.builder(
-                      padding: EdgeInsets.all(8),
-                      physics: NeverScrollableScrollPhysics(), // Sin scroll, todo visible
+        // Columna de botones - Centro (entre sílabas y teclado)
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              // Botón Borrar (basurero) - arriba
+              Expanded(
+                flex: 10,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 4, top: 9, left: 8, right: 0),
+                  child: DragTarget<Object>(
+                    onAccept: (data) {
+                      if (data is Map && data.containsKey('index')) {
+                        int indexABorrar = data['index'];
+                        _handleDeleteSyllable(indexABorrar);
+                      }
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      return SizedBox.expand(
+                        child: GestureDetector(
+                          onTap: () {
+                            final tieneContenido = _syllables.any((s) => s.isNotEmpty);
+                            if (tieneContenido) {
+                              _speak('Arrastra las sílabas hasta acá para borrarlas');
+                            } else {
+                              _speak('Forma sílabas con las letras para verlas aquí');
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: candidateData.isNotEmpty ? Colors.red : Colors.grey,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              color: candidateData.isNotEmpty ? Colors.red.withOpacity(0.15) : const Color.fromARGB(255, 88, 88, 88),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                    'Arrastra las\nsílabas hasta acá\npara borrarlas',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color.fromARGB(221, 255, 255, 255),
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Icon(Icons.delete, size: 28, color: Colors.red),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // Espacio vacío entre botones
+              Expanded(
+                flex: 3,
+                child: SizedBox(),
+              ),
+              // Botón Limpiar (rojo) - abajo
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 9, top: 4, left: 8, right: 0),
+                  child: SizedBox.expand(
+                    child: ElevatedButton(
+                      onPressed: _clearSyllable,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.all(0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Limpiar',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Columna de teclado - Derecha
+        Expanded(
+          flex: 7,
+          child: Column(
+            children: [
+              // Teclado de letras (5 columnas en landscape)
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    const int crossAxisCount = 5;
+                    const double spacing = 8;
+                    const double pad = 10;
+                    final int rowCount = (_letters.length / crossAxisCount).ceil();
+                    final double cellWidth = (constraints.maxWidth - pad * 2 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+                    final double cellHeight = (constraints.maxHeight - pad * 2 - spacing * (rowCount - 1)) / rowCount;
+                    final double ratio = cellHeight > 0 ? cellWidth / cellHeight : 1.0;
+                    return GridView.builder(
+                      physics: NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.all(pad),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: spacing,
                         mainAxisSpacing: spacing,
-                        childAspectRatio: aspectRatio.clamp(0.5, 2.0),
+                        childAspectRatio: ratio,
                       ),
                       itemCount: _letters.length,
                       itemBuilder: (context, index) {
                         return _buildLetterButton(_letters[index]);
                       },
-                    ),
-                    // Botón Limpiar posicionado en la esquina inferior derecha
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: ElevatedButton(
-                        onPressed: _clearSyllable,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: Text(
-                          'Limpiar',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+      },
     );
   }
 
@@ -681,6 +1004,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> {
         double maxFontSize = 48.0;
         
         return Container(
+          key: _letterKeys[letter],
           width: constraints.maxWidth,
           height: constraints.maxHeight,
           child: ElevatedButton(

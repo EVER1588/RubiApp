@@ -5,6 +5,7 @@ class BotonDeBorrar extends StatelessWidget {
   final double altoP;
   final Function(dynamic) alBorrar; // Acepta dynamic (String o Map)
   final bool isLandscape; // Parámetro para identificar modo landscape
+  final double borderRadiusMultiplier; // Multiplicador para ajustar el borderRadius
 
   const BotonDeBorrar({
     Key? key,
@@ -12,6 +13,7 @@ class BotonDeBorrar extends StatelessWidget {
     required this.altoP,
     required this.alBorrar,
     this.isLandscape = false,
+    this.borderRadiusMultiplier = 0.03,
   }) : super(key: key);
 
   @override
@@ -27,7 +29,7 @@ class BotonDeBorrar extends StatelessWidget {
           width: buttonSize,
           decoration: BoxDecoration(
             color: Colors.grey[800],
-            borderRadius: BorderRadius.circular(anchoP * 0.03),
+            borderRadius: BorderRadius.circular(anchoP * borderRadiusMultiplier),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
