@@ -34,6 +34,40 @@ android {
             abiFilters.add("x86_64")       // Para emuladores x86_64
         }
     }
+
+    // Leer propiedades del keystore
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    val keystoreProperties = mutableMapOf<String, String>()
+    
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.forEachLine { line ->
+            if (line.isNotEmpty() && !line.startsWith("#")) {
+                val parts = line.split("=", limit = 2)
+                if (parts.size == 2) {
+                    keystoreProperties[parts[0].trim()] = parts[1].trim()
+                }
+            }
+        }
+    }
+
+    // Configurar firma de APK
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"]
+            keyPassword = keystoreProperties["keyPassword"]
+            storeFile = file(keystoreProperties["storeFile"] ?: "key.jks")
+            storePassword = keystoreProperties["storePassword"]
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+        }
+    }
 }
 
 flutter {

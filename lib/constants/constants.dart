@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'concatenacion_screen.dart';
 import '../services/tts_manager.dart';
 
@@ -57,35 +56,26 @@ const double ROUND_BUTTON_BORDER_WIDTH = 2.0;
 const double DELETE_BUTTON_SIZE = 70.0;
 
 // Instancia global de TTS y UUID
-final FlutterTts flutterTts = FlutterTts();
 final Uuid uuid = Uuid();
 final TtsManager ttsManager = TtsManager();
 
-// Configurar Flutter TTS
-void configurarFlutterTts() async {
-  await flutterTts.setLanguage("es-U S");
-  await flutterTts.setPitch(1.0);
-  await flutterTts.setSpeechRate(0.5);
-  await flutterTts.awaitSpeakCompletion(true);
-}
-
-// Función global actualizada para texto a voz
+// Función global para texto a voz
 Future<void> decirTexto(String texto, {bool esSilaba = false}) async {
   if (esSilaba) {
-    await ttsManager.speakSpecialSyllable(texto);
+    await ttsManager.speakSyllable(texto);
   } else {
     await ttsManager.speak(texto);
   }
 }
 
-// Nueva función específica para sílabas
+// Función específica para sílabas (usa velocidad lenta y conversión fonética completa)
 Future<void> decirSilaba(String silaba) async {
-  await ttsManager.speakSpecialSyllable(silaba);
+  await ttsManager.speakSyllable(silaba);
 }
 
 // Función global para detener la reproducción
 Future<void> detenerTexto() async {
-  await flutterTts.stop();
+  await ttsManager.stop();
 }
 
 // Función para calcular el número máximo de bloques que caben en un contenedor

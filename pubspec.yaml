@@ -13,8 +13,12 @@ dependencies:
     sdk: flutter
   video_player: ^2.9.5
   shared_preferences: ^2.5.3
-  flutter_tts: ^4.2.2  # Actualizar a la última versión
-  uuid: ^3.0.7 
+  flutter_tts: ^4.2.2
+  uuid: ^3.0.7
+  audioplayers: ^6.0.0     # Reproducción de audios MP3 locales
+  http: ^1.2.0             # Llamadas a Google Cloud TTS API
+  path_provider: ^2.1.0   # Directorio local del dispositivo
+  crypto: ^3.0.3          # Hash MD5 para nombres de archivo
 
 dev_dependencies:
   flutter_test:

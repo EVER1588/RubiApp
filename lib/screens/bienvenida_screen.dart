@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'menu_screen.dart';
-import '../constants/custombar_screen.dart'; // Importa el nuevo CustomBar
+import '../constants/custombar_screen.dart';
 
-class BienvenidaScreen extends StatelessWidget {
+class BienvenidaScreen extends StatefulWidget {
+  const BienvenidaScreen({Key? key}) : super(key: key);
+
+  @override
+  State<BienvenidaScreen> createState() => _BienvenidaScreenState();
+}
+
+class _BienvenidaScreenState extends State<BienvenidaScreen> {
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -73,16 +81,6 @@ class BienvenidaScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showOptionsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Opciones'),
-        content: Text('Aquí van las opciones'),
       ),
     );
   }

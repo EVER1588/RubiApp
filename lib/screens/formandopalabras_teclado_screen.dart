@@ -45,7 +45,7 @@ class _Metodo2TecladoState extends State<Metodo2Teclado> {
    // Agrega más letras según sea necesario
   };
 
-  // Método para reproducir voz
+  // Método para reproducir voz. TtsManager normaliza y convierte fonéticamente.
 void _speak(String text) async {
   await TtsManager.instance.speak(text);
 }
