@@ -7,10 +7,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await TtsManager.instance.init();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   _MyAppState createState() => _MyAppState();
 }

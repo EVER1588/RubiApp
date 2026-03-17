@@ -25,6 +25,9 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
   Color _primaryColor = Colors.deepPurple;
   Color _secondaryColor = Colors.orange;
 
+  // Modo de visualización de sílabas
+  bool _useModules = false; // Por defecto: modo clásico
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +48,8 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
 
       _primaryColor = Color(prefs.getInt('primaryColor') ?? Colors.deepPurple.value);
       _secondaryColor = Color(prefs.getInt('secondaryColor') ?? Colors.orange.value);
+
+      _useModules = prefs.getBool('useModules') ?? false;
     });
   }
 
@@ -57,6 +62,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     await prefs.setBool('isTtsMuted', _isTtsMuted);
     await prefs.setInt('primaryColor', _primaryColor.value);
     await prefs.setInt('secondaryColor', _secondaryColor.value);
+    await prefs.setBool('useModules', _useModules);
   }
 
   String _getSpeedLabel(double speed) {
@@ -197,11 +203,28 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               ],
             ),
           ),
+
+          // Modo de visualización de sílabas
+          SwitchListTile(
+            title: Text('Módulos de Sílabas'),
+            subtitle: Text(_useModules
+                ? 'Módulos: muestra letras + sílaba en un bloque visual'
+                : 'Clásico: letras sueltas y sílabas formadas'),
+            value: _useModules,
+            onChanged: (value) {
+              setState(() {
+                _useModules = value;
+                _saveSettings();
+              });
+            },
+          ),
+
         ],
       ),
     );
   }
 
+  /// Construye botón de color
   Widget _buildColorButton(Color color, Color selectedColor) {
     return GestureDetector(
       onTap: () {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'aprendesilabas_screen.dart';
 import 'formandopalabras_screen.dart';
-import 'formandopalabras_teclado_screen.dart';
 import 'metodo3_screen.dart';
 import 'configuracion_screen.dart';
 import '../constants/custombar_screen.dart';

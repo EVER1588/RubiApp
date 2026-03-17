@@ -112,14 +112,14 @@ class _Metodo3ScreenState extends State<Metodo3Screen> {
                 ),
               ),
               
-              // Grid con las categorías
+              // Grid con las categorías - Responsivo
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // Cambiado de 4 a 3 columnas
-                    crossAxisSpacing: 15, // Aumentado de 10 a 15 para dar más espacio entre columnas
-                    mainAxisSpacing: 15, // Aumentado para consistencia
-                    childAspectRatio: 0.85, // Ajustado para mejor visualización con 3 columnas
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 2 : 4,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                    childAspectRatio: 0.85,
                   ),
                   itemCount: categorias.length,
                   padding: EdgeInsets.all(5),

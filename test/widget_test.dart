@@ -12,7 +12,7 @@ import 'package:aprender_a_leer/main.dart'; // Asegúrate de que esta ruta sea c
 void main() {
   testWidgets('BienvenidaScreen displays correctly', (WidgetTester tester) async {
     // Construye la aplicación y activa un frame.
-    await tester.pumpWidget(MyApp()); // Eliminamos 'const' aquí
+    await tester.pumpWidget(const MyApp());
 
     // Verifica que el texto "Rubi" está presente en la pantalla.
     expect(find.text('Rubi'), findsOneWidget);

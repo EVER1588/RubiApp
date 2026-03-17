@@ -155,7 +155,7 @@ class _FrutasScreenState extends State<FrutasScreen> {
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 2 : 4,
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,
