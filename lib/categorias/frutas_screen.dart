@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'item_detail_screen.dart';
 import '../constants/custombar_screen.dart';
+import '../services/tts_manager.dart';
 
 class FrutasScreen extends StatefulWidget {
   @override
@@ -9,6 +10,10 @@ class FrutasScreen extends StatefulWidget {
 }
 
 class _FrutasScreenState extends State<FrutasScreen> {
+  int _itemSize = 1;
+  int _getPortraitColumns() => [3, 2, 1][_itemSize];
+  int _getLandscapeColumns() => [5, 4, 3][_itemSize];
+
   List<Map<String, dynamic>> frutas = [
     {"nombre": "Mango", "imagen": "lib/utils/images/frutas/mango.jpeg"},
     {"nombre": "Pera", "imagen": "lib/utils/images/frutas/pera.jpeg"},
@@ -17,7 +22,7 @@ class _FrutasScreenState extends State<FrutasScreen> {
     {"nombre": "Limón", "imagen": "lib/utils/images/frutas/limon.jpeg"},
     {"nombre": "Naranja", "imagen": "lib/utils/images/frutas/naranja.jpeg"},
     {"nombre": "Fresa", "imagen": "lib/utils/images/frutas/fresa.jpeg"},
-    {"nombre": "Plátano", "imagen": "lib/utils/images/frutas/platano.jpeg"},
+    {"nombre": "Banano", "imagen": "lib/utils/images/frutas/banano.jpeg"},
     {"nombre": "Sandía", "imagen": "lib/utils/images/frutas/sandia.jpeg"},
     {"nombre": "Manzana", "imagen": "lib/utils/images/frutas/manzana.jpeg"},
     {"nombre": "Melón", "imagen": "lib/utils/images/frutas/melon.jpeg"},
@@ -34,6 +39,15 @@ class _FrutasScreenState extends State<FrutasScreen> {
   void initState() {
     super.initState();
     _cargarProgreso();
+    _loadItemSize();
+    TtsManager.instance.speak("Frutas");
+  }
+
+  Future<void> _loadItemSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _itemSize = prefs.getInt('metodo3ItemSize') ?? 1;
+    });
   }
 
   Future<void> _cargarProgreso() async {
@@ -85,24 +99,23 @@ class _FrutasScreenState extends State<FrutasScreen> {
   }
 
   void _seleccionarFruta(String fruta) async {
-    Map<String, dynamic>? frutaSeleccionada = frutas.firstWhere(
-      (item) => item["nombre"] == fruta,
-    );
+    final int index = frutas.indexWhere((f) => f['nombre'] == fruta);
+    Map<String, dynamic> frutaSeleccionada = frutas[index];
     
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ItemDetailScreen(
           nombre: frutaSeleccionada["nombre"],
           imagen: frutaSeleccionada["imagen"],
           categoria: "Frutas",
+          allItems: frutas,
+          currentIndex: index,
         ),
       ),
     );
 
-    if (result != null && result['completado'] == true) {
-      await _marcarComoCompletado(fruta);
-    }
+    await _cargarProgreso();
   }
 
   @override
@@ -128,7 +141,9 @@ class _FrutasScreenState extends State<FrutasScreen> {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              Container(
+              GestureDetector(
+                onTap: () => TtsManager.instance.speak("Selecciona una fruta para aprender a escribir su nombre"),
+                child: Container(
                 padding: EdgeInsets.all(15),
                 margin: EdgeInsets.only(bottom: 15),
                 decoration: BoxDecoration(
@@ -146,16 +161,20 @@ class _FrutasScreenState extends State<FrutasScreen> {
                   "Selecciona una fruta para aprender a escribir su nombre",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(1, 2)),
+                    ],
                   ),
                 ),
+              ),
               ),
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 2 : 4,
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns() : _getLandscapeColumns(),
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,
@@ -244,7 +263,10 @@ class _FrutasScreenState extends State<FrutasScreen> {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 18,
+                            shadows: [
+                              Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(1, 2)),
+                            ],
                           ),
                         ),
                       ),

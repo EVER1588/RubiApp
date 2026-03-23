@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/tts_manager.dart';
 import '../constants/state_manager.dart';
+import '../constants/custombar_screen.dart';
 
 class Metodo1Screen extends StatefulWidget {
   @override
@@ -27,8 +28,17 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   // Bloquear la adición de letras mientras hay una animación en progreso
   bool _isAnimating = false;
 
-  // Modo de visualización: false = clásico, true = módulos
-  bool _useModules = false;
+  // ─── Variables para el tutorial de primera sílaba ───────────────────────────
+  bool _showTutorial = false;
+  bool _tutorialCompleted = false;
+  int _tutorialStep = 0; // 0: apuntar a B, 1: apuntar a A, 2: completado
+  bool _isHelpTutorial = false; // true cuando se muestra desde el botón Ayuda
+  late AnimationController _tutorialHandController;
+  late Animation<double> _tutorialHandBounce;
+  Map<String, GlobalKey> _tutorialLetterKeys = {};
+
+  // Modo de visualización: false = clásico, true = módulos (MODERNO ES EL MODO POR DEFECTO)
+  bool _useModules = true;
 
   // Estilo del teclado: false = uniforme, true = colorido (pasteles)
   bool _useColorfulKeyboard = false;
@@ -36,7 +46,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   // Esquema de color para teclado colorido (0-4)
   int _colorfulScheme = 0;
 
-  // Ãndice de color para teclado uniforme  
+  // Índice de color para teclado uniforme  
   int _uniformColorIndex = 0; // Azul clásico por defecto
 
   // Paletas disponibles para teclado uniforme [activo, inactivo]
@@ -54,8 +64,11 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   ];
 
   static const List<String> _colorfulSchemeNames = [
-    'Arcoiris', 'Ocaso', 'Océano', 'Primavera', 'Noche',
+    'Arcoiris', 'Ocaso', 'Océano', 'Primavera', 'Noche', 'Aleatorio',
   ];
+
+  // Colores aleatorios para el esquema "Aleatorio"
+  Map<String, Color> _randomLetterColors = {};
 
   // Keys para la animación de letras volando
   final GlobalKey _syllableContainerKey = GlobalKey();
@@ -99,12 +112,15 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     'XA', 'XE', 'XI', 'XO', 'XU',
     'YA', 'YE', 'YI', 'YO', 'YU',   
     'ZA', 'ZE', 'ZI', 'ZO', 'ZU',
+
+    
     'BLA', 'BLE', 'BLI', 'BLO', 'BLU',
     'CLA', 'CLE', 'CLI', 'CLO', 'CLU',
     'FLA', 'FLE', 'FLI', 'FLO', 'FLU',
     'GLA', 'GLE', 'GLI', 'GLO', 'GLU',
     'PLA', 'PLE', 'PLI', 'PLO', 'PLU',
     'LLA', 'LLE', 'LLI', 'LLO', 'LLU',
+    'BRA', 'BRE', 'BRI', 'BRO', 'BRU',
     'CRA', 'CRE', 'CRI', 'CRO', 'CRU',
     'FRA', 'FRE', 'FRI', 'FRO', 'FRU',
     'GRA', 'GRE', 'GRI', 'GRO', 'GRU',
@@ -121,23 +137,47 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     'U': true, 'V': true, 'W': true, 'X': true, 'Y': true, 'Z': true,
   };
 
-  // Variables para animar sílabas completadas
+  // Variables para animar sílabas completadas (modo módulos)
   String? _lastAnimatedSyllable;
   bool _isSyllableAppearing = false;
   late AnimationController _syllableAnimController;
-  late Animation<double> _syllableSlideAnim;  // deslizamiento desde la izquierda
-  late Animation<double> _syllableScaleAnim;  // escala con rebote al aterrizar
+  late Animation<double> _syllableSlideAnim;
+  late Animation<double> _syllableScaleAnim;
+
+  // Variables para animación de fusión (modo clásico)
+  bool _isMergingClassic = false;
+  String? _classicMergeSyllable;
+  late AnimationController _mergeAnimController;
+  late Animation<double> _letterShrinkAnim;   // letras se encogen: 1.0→0.0
+  late Animation<double> _classicSyllablePopAnim; // sílaba aparece: 0.0→1.0 con rebote
+
+  // Colores de las letras sueltas en modo clásico (por posición en el bloque actual)
+  final Map<int, Color> _classicLetterColors = {};
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     TtsManager.instance.init();
+    TtsManager.instance.speak("Aprende Sílabas");
     StateManager().cargarDatos();
     _loadViewMode();
     for (String letter in _letters) {
       _letterKeys[letter] = GlobalKey();
+      _tutorialLetterKeys[letter] = GlobalKey();
     }
+    
+    // Controlador de animación para el tutorial
+    _tutorialHandController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+    _tutorialHandBounce = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _tutorialHandController, curve: Curves.easeInOut),
+    );
+    
+    // Verificar si mostrar el tutorial
+    _checkTutorial();
 
     // Controlador de animación de aparición de sílaba (slide + bounce)
     _syllableAnimController = AnimationController(
@@ -164,24 +204,216 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         });
       }
     });
+
+    // Controlador para fusión en modo clásico (900ms total)
+    _mergeAnimController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 900),
+    );
+    // Fase 1 (0–35%): letras se encogen hasta desaparecer
+    _letterShrinkAnim = _mergeAnimController.drive(
+      Tween(begin: 1.0, end: 0.0).chain(
+        CurveTween(curve: Interval(0.0, 0.35, curve: Curves.easeIn)),
+      ),
+    );
+    // Fase 2 (32–100%): sílaba aparece con pop + rebote
+    _classicSyllablePopAnim = _mergeAnimController.drive(
+      Tween(begin: 0.0, end: 1.0).chain(
+        CurveTween(curve: Interval(0.32, 1.0, curve: Curves.elasticOut)),
+      ),
+    );
+    _mergeAnimController.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() { _isMergingClassic = false; });
+      }
+    });
   }
 
   Future<void> _loadViewMode() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _useModules = prefs.getBool('useModules') ?? false;
+        _useModules = prefs.getBool('useModules') ?? true;
         _useColorfulKeyboard = prefs.getBool('useColorfulKeyboard') ?? false;
         _colorfulScheme = prefs.getInt('colorfulScheme') ?? 0;
         _uniformColorIndex = prefs.getInt('uniformColorIndex') ?? 0;
       });
+      if (_colorfulScheme == 5) _generateRandomColors();
     }
+    await _loadSyllableState();
+  }
+
+  Future<void> _saveSyllableState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('syllables_state', _syllables);
+    await prefs.setInt('syllables_blockIndex', _currentBlockIndex);
+  }
+
+  Future<void> _loadSyllableState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('syllables_state');
+    final savedIndex = prefs.getInt('syllables_blockIndex');
+    if (saved != null && saved.isNotEmpty && mounted) {
+      setState(() {
+        _syllables = saved;
+        _currentBlockIndex = (savedIndex ?? saved.length - 1).clamp(0, saved.length - 1);
+        _showCurrentLooseLetters = true;
+        if (_syllables[_currentBlockIndex].isNotEmpty) {
+          _updateActiveLetters(_syllables[_currentBlockIndex]);
+        } else {
+          _resetActiveLetters();
+        }
+      });
+    }
+  }
+
+  // ─── Métodos del tutorial de primera sílaba ─────────────────────────────────
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasCompletedFirstSyllable = prefs.getBool('aprendesilabas_tutorial_completed') ?? false;
+    
+    if (!hasCompletedFirstSyllable) {
+      // Esperar un momento para que la UI se construya
+      await Future.delayed(Duration(milliseconds: 1200));
+      if (mounted) {
+        setState(() {
+          _showTutorial = true;
+          _tutorialStep = 0;
+          _isHelpTutorial = false;
+        });
+        // Iniciar con TTS
+        _speak('Toca la letra B del teclado para iniciar');
+      }
+    }
+  }
+
+  void _startHelpTutorial() {
+    setState(() {
+      _showTutorial = true;
+      _tutorialStep = 0;
+      _isHelpTutorial = true; // Sin TTS
+    });
+  }
+
+  Future<void> _onTutorialLetterTapped(String letter) async {
+    if (!_showTutorial) return;
+    
+    if (_tutorialStep == 0 && letter == 'B') {
+      // Paso 1 completado: tocó la B
+      setState(() {
+        _tutorialStep = 1;
+      });
+      if (!_isHelpTutorial) {
+        await Future.delayed(Duration(milliseconds: 800));
+        _speak('Ahora toca la letra A');
+      }
+    } else if (_tutorialStep == 1 && letter == 'A') {
+      // Paso 2 completado: tocó la A, se formará BA
+      setState(() {
+        _tutorialStep = 2;
+        _showTutorial = false;
+      });
+    }
+  }
+
+  Future<void> _onFirstSyllableCompleted() async {
+    if (_tutorialCompleted) return;
+    
+    // Solo se felicita si no es tutorial de ayuda y es la primera vez
+    if (!_isHelpTutorial) {
+      await Future.delayed(Duration(milliseconds: 1200));
+      _speak('¡Felicidades! formaste tu primera sílaba. ¡Continúa formando muchas más!');
+    }
+    
+    // Marcar como completado
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('aprendesilabas_tutorial_completed', true);
+    
+    setState(() {
+      _tutorialCompleted = true;
+      _showTutorial = false;
+    });
+  }
+
+  // Widget de la manita apuntando para el tutorial
+  Widget _buildTutorialHandOverlay() {
+    if (!_showTutorial) return SizedBox.shrink();
+
+    String targetLetter = _tutorialStep == 0 ? 'B' : 'A';
+    
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _tutorialHandController,
+              builder: (context, child) {
+                // Obtener posición de la letra objetivo desde su GlobalKey
+                // Asegurar que sea mayúscula
+                final searchLetter = targetLetter.toUpperCase();
+                final targetKey = _letterKeys[searchLetter];
+                if (targetKey == null) return SizedBox.shrink();
+                
+                final renderBox = targetKey.currentContext?.findRenderObject() as RenderBox?;
+                if (renderBox == null || !renderBox.hasSize) return SizedBox.shrink();
+                
+                late final Offset position;
+                try {
+                  position = renderBox.localToGlobal(Offset.zero);
+                } catch (_) {
+                  return SizedBox.shrink();
+                }
+                final size = renderBox.size;
+                
+                // Centro de la letra
+                final targetCenter = Offset(
+                  position.dx + size.width / 2,
+                  position.dy + size.height / 2,
+                );
+                
+                // Tamaño de la imagen
+                const double handSize = 380.0;
+                const double pointerVerticalOffset = -90.0;
+                
+                // Posicionar la imagen: la punta del dedo está en el centro de la imagen
+                // por lo que centramos la imagen directamente en el punto objetivo
+                final bounceOffsetY = _tutorialHandBounce.value * 10;
+                
+                final handX = targetCenter.dx - handSize / 2;
+                final handY = targetCenter.dy - handSize / 2 + pointerVerticalOffset + bounceOffsetY;
+                
+                return Positioned(
+                  left: handX,
+                  top: handY,
+                  child: Image.asset(
+                    'lib/utils/images/fondos/manita.png',
+                    width: handSize,
+                    height: handSize,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Genera colores aleatorios para cada letra (esquema "Aleatorio")
+  void _generateRandomColors() {
+    final rng = math.Random();
+    _randomLetterColors = {
+      for (final l in _letters)
+        l: HSLColor.fromAHSL(1.0, rng.nextDouble() * 360.0, 0.55 + rng.nextDouble() * 0.15, 0.42 + rng.nextDouble() * 0.16).toColor(),
+    };
   }
   
   @override
   void dispose() {
     _scrollController.dispose();
     _syllableAnimController.dispose();
+    _mergeAnimController.dispose();
+    _tutorialHandController.dispose();
     super.dispose();
   }
 
@@ -215,7 +447,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   // Anima una letra volando desde el teclado hasta el contenedor de sílabas.
   // En modo módulos, la letra se transforma gradualmente del tamaño del teclado
   // al tamaño que tendrá dentro del módulo.
-  Future<void> _flyLetterAnimation(String letter, Offset? targetPos, [Size? targetChipSize, Color? letterColor]) async {
+  Future<void> _flyLetterAnimation(String letter, String displayLetter, Offset? targetPos, [Size? targetChipSize, Color? letterColor]) async {
     final sourceKey = _letterKeys[letter];
     if (sourceKey?.currentContext == null ||
         _syllableContainerKey.currentContext == null ||
@@ -255,12 +487,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
 
-    // Determinar si mostrar mayúscula o minúscula
-    // Mayúscula al inicio de cada sílaba, minúscula después
-    String displayLetter = letter;
-    if (_syllables[_currentBlockIndex].length > 0) {
-      displayLetter = letter.toLowerCase();
-    }
+    // displayLetter ya viene calculado desde _addLetter con la mayúscula/minúscula correcta
 
     if (targetChipSize != null) {
       // ── Modo módulos: morph del botón del teclado al chip del módulo ──
@@ -299,6 +526,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                     decoration: BoxDecoration(
                       color: letterColor ?? Colors.blueAccent,
                       borderRadius: BorderRadius.circular(r),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.4),
+                        width: 2,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: (letterColor ?? Colors.blueAccent).withOpacity(0.5),
@@ -386,12 +617,16 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   String _formatSyllableForDisplay(String syllable, int syllableIndex) {
     if (syllable.isEmpty) return syllable;
     
-    if (syllableIndex == 0) {
-      // Primera sílaba: primera letra mayúscula, resto minúscula
+    if (_useModules) {
+      // MODO MODERNO: Primera letra de CADA sílaba en mayúscula
       return syllable[0].toUpperCase() + syllable.substring(1).toLowerCase();
     } else {
-      // Sílabas posteriores: todas minúsculas
-      return syllable.toLowerCase();
+      // MODO CLÁSICO: Solo la primera sílaba tiene mayúscula
+      if (syllableIndex == 0) {
+        return syllable[0].toUpperCase() + syllable.substring(1).toLowerCase();
+      } else {
+        return syllable.toLowerCase();
+      }
     }
   }
 
@@ -400,6 +635,11 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     if (_isAnimating) return; // Bloquear si hay animación en progreso
     if (!_activeLetters[letter]!) return; // Ignorar letras desactivadas
     _isAnimating = true;
+    
+    // Manejar el tutorial si está activo
+    if (_showTutorial) {
+      _onTutorialLetterTapped(letter);
+    }
 
     // 🔊 LEER LA LETRA INMEDIATAMENTE AL TOCAR (antes de cualquier otra acción)
     _speak(letter);
@@ -420,12 +660,19 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       }
     });
 
-    // Determinar si convertir la letra a minúscula
-    // Mayúscula al inicio de cada sílaba, minúscula después
+    // Determinar si convertir la letra a minúscula según el modo
     String letterToAdd = letter;
-    if (_syllables[_currentBlockIndex].isNotEmpty) {
-      // Si el bloque ya tiene contenido, usar minúscula
-      letterToAdd = letter.toLowerCase();
+    if (_useModules) {
+      // Modo Moderno: mayúscula solo en la primera letra de cada sílaba
+      if (_syllables[_currentBlockIndex].isNotEmpty) {
+        letterToAdd = letter.toLowerCase();
+      }
+    } else {
+      // Modo Clásico: mayúscula solo si es la primera letra de toda la sesión
+      final nothingTyped = _syllables.every((s) => s.isEmpty);
+      if (!nothingTyped) {
+        letterToAdd = letter.toLowerCase();
+      }
     }
 
     // PASO 1: Agregar la letra al estado Y marcarla como animando al mismo tiempo
@@ -442,7 +689,11 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     // PASO 3: Animar la letra hacia su posición exacta
     // En modo módulos, la letra se transforma del tamaño del teclado al del chip
     final animColor = _getActiveButtonColor(letter);
-    await _flyLetterAnimation(letter, targetPosition, _useModules ? targetSize : null, animColor);
+    // Guardar el color para mostrarlo en el chip clásico después de la animación
+    if (!_useModules) {
+      _classicLetterColors[_syllables[_currentBlockIndex].length - 1] = animColor;
+    }
+    await _flyLetterAnimation(letter, letterToAdd, targetPosition, _useModules ? targetSize : null, animColor);
 
     // PASO 4: Desmarcar la animación (la letra reaparece normalmente)
     setState(() {
@@ -459,23 +710,40 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       // Guarda la sílaba formada
       String formedSyllable = _syllables[_currentBlockIndex];
       
-      // PASO 2: OCULTAR LETRAS, MOSTRAR BLOQUE VERDE Y DISPARAR ANIMACIÓN juntos
-      setState(() {
-        _showCurrentLooseLetters = false;
-        _isSyllableAppearing = true;
-        _lastAnimatedSyllable = formedSyllable;
-      });
-      _syllableAnimController.forward(from: 0); // Inicia animación en paralelo
-      
-      // Pequeña pausa para que se vea el cambio visual
-      await Future.delayed(Duration(milliseconds: 100));
-      
-      // LEER LA SÍLABA MIENTRAS SE VE EL BLOQUE VERDE (y la animación corre en paralelo)
-      // Usa el método adecuado según si el TTS puede pronunciarla como unidad o no
-      await _speakFormedSyllable(formedSyllable);
+      if (_useModules) {
+        // ── Modo módulos: slide desde izquierda + rebote ──
+        setState(() {
+          _showCurrentLooseLetters = false;
+          _isSyllableAppearing = true;
+          _lastAnimatedSyllable = formedSyllable;
+        });
+        _syllableAnimController.forward(from: 0);
+        await Future.delayed(Duration(milliseconds: 100));
+        await _speakFormedSyllable(formedSyllable);
+      } else {
+        // ── Modo clásico: letras se encogen y sílaba aparece con pop ──
+        setState(() {
+          _isMergingClassic = true;
+          _classicMergeSyllable = formedSyllable;
+        });
+        _mergeAnimController.forward(from: 0);
+
+        // Esperar que las letras terminen de encogerse (~35% de 900ms)
+        await Future.delayed(Duration(milliseconds: 320));
+
+        // Cambiar a vista de sílaba (la sílaba pop arranca desde este momento)
+        setState(() { _showCurrentLooseLetters = false; });
+        await Future.delayed(Duration(milliseconds: 80));
+        await _speakFormedSyllable(formedSyllable);
+      }
 
       // Contar la sílaba en las estadísticas
       StateManager().actualizarContadores(nuevaSilaba: true);
+      
+      // Verificar si se completó la primera sílaba del tutorial (BA)
+      if (!_tutorialCompleted && formedSyllable.toUpperCase() == 'BA') {
+        _onFirstSyllableCompleted();
+      }
       
       // Esperar un momento después de leer
       await Future.delayed(Duration(milliseconds: 500));
@@ -513,6 +781,18 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       _syllables.add(''); // Agregar un nuevo bloque vacío
       _currentBlockIndex++; // Incrementar el índice del bloque actual
       _resetActiveLetters(); // Reactivar todas las letras para el nuevo bloque
+      _classicLetterColors.clear(); // Limpiar colores del bloque anterior
+    });
+    _saveSyllableState();
+    // Auto-scroll al fondo para que el nuevo bloque sea visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
@@ -572,8 +852,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       _syllables = ['']; // Reiniciar la lista de bloques
       _currentBlockIndex = 0; // Reiniciar el índice del bloque actual
       _showCurrentLooseLetters = true; // Mostrar letras sueltas de nuevo
+      _classicLetterColors.clear();
     });
     _resetActiveLetters(); // Restaurar todas las letras
+    _saveSyllableState();
   }
 
   // Detecta si el dispositivo es una tablet basado en la relación de aspecto
@@ -600,13 +882,9 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         if (indexABorrar == _currentBlockIndex) {
           _syllables.removeAt(indexABorrar);
           
-          // Ajustar el índice actual si es necesario
-          if (_currentBlockIndex >= _syllables.length) {
-            _currentBlockIndex = _syllables.length - 1;
-          }
-          
-          // Vaciar el bloque actual después de ajustar el índice
-          _syllables[_currentBlockIndex] = '';
+          // Agregar un nuevo bloque vacío al final en lugar de sobrescribir uno existente
+          _syllables.add('');
+          _currentBlockIndex = _syllables.length - 1;
           _showCurrentLooseLetters = true;
           _resetActiveLetters();
         } else {
@@ -629,6 +907,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         }
       }
     });
+    _saveSyllableState();
   }
 
   // Borra una letra individual de la sílaba actual por índice
@@ -649,6 +928,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
           _updateActiveLetters(_syllables[_currentBlockIndex]); // Si hay contenido, validar
         }
       });
+      _saveSyllableState();
     }
   }
 
@@ -657,33 +937,20 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     
     return Scaffold(
-      appBar: isLandscape ? null : AppBar(
-        title: Text('Aprende Sílabas'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.help_outline_rounded),
-            onPressed: _mostrarAyuda,
-            tooltip: 'Ayuda',
-          ),
-          IconButton(
-            icon: Icon(Icons.info_outline_rounded),
-            onPressed: _mostrarEstadisticas,
-            tooltip: 'Estadísticas',
-          ),
-          IconButton(
-            icon: Icon(Icons.settings_rounded),
-            onPressed: _mostrarAjustes,
-            tooltip: 'Ajustes',
-          ),
+      appBar: isLandscape ? null : CustomBar(
+        titleText: 'Aprende Sílabas',
+        onBackPressed: () => Navigator.pop(context),
+        onHelpPressed: _mostrarAyuda,
+        onInfoPressed: _mostrarEstadisticas,
+        onSettingsPressed: _mostrarAjustes,
+      ),
+      body: Stack(
+        children: [
+          isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
+          // Overlay del tutorial
+          if (_showTutorial) _buildTutorialHandOverlay(),
         ],
       ),
-      body: isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
     );
   }
 
@@ -693,7 +960,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         children: [
           // Zona de Sílabas - Contenedor responsivo con Flex
           Flexible(
-            flex: 15, // Toma 2 partes del espacio disponible
+            flex: 17, 
             child: Container(
               key: _syllableContainerKey,
               width: double.infinity,
@@ -765,14 +1032,60 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                                 // Leer la sílaba al tocarla (TtsManager normaliza internamente)
                                 _speak(entry.value.toUpperCase());
                               },
-                              child: Chip(
-                                label: Text(
-                                  _formatSyllableForDisplay(entry.value, entry.key),
-                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                ),
-                                backgroundColor: Colors.green,
-                                labelStyle: TextStyle(color: Colors.white),
-                              ),
+                              child: _isMergingClassic && entry.value == _classicMergeSyllable
+                                ? Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.green.withOpacity(0.45),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: AnimatedBuilder(
+                                      animation: _mergeAnimController,
+                                      builder: (ctx, child) => Transform.scale(
+                                        scale: _classicSyllablePopAnim.value,
+                                        child: child,
+                                      ),
+                                      child: Chip(
+                                        label: Text(
+                                          _formatSyllableForDisplay(entry.value, entry.key),
+                                          style: TextStyle(
+                                            fontSize: 24, fontWeight: FontWeight.bold,
+                                            shadows: [Shadow(blurRadius: 3, color: Colors.black38, offset: Offset(1, 1))],
+                                          ),
+                                        ),
+                                        backgroundColor: Colors.green,
+                                        labelStyle: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.green.withOpacity(0.45),
+                                          blurRadius: 4,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Chip(
+                                      label: Text(
+                                        _formatSyllableForDisplay(entry.value, entry.key),
+                                        style: TextStyle(
+                                          fontSize: 24, fontWeight: FontWeight.bold,
+                                          shadows: [Shadow(blurRadius: 3, color: Colors.black38, offset: Offset(1, 1))],
+                                        ),
+                                      ),
+                                      backgroundColor: Colors.green,
+                                      labelStyle: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
                             ),
                           );
                         }).toList(),
@@ -782,6 +1095,45 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                           ..._syllables[_currentBlockIndex].split('').asMap().entries.map((letterEntry) {
                             final isLast = letterEntry.key == _syllables[_currentBlockIndex].length - 1;
                             final isAnimating = isLast && _animatingLetter != null;
+                            final letterColor = _classicLetterColors[letterEntry.key] ?? Colors.blueAccent;
+                            Widget chip = Opacity(
+                              opacity: isAnimating ? 0 : 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: letterColor.withOpacity(0.45),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Chip(
+                                  key: isLast ? _nextLetterPositionKey : null,
+                                  label: Text(
+                                    letterEntry.value,
+                                    style: TextStyle(
+                                      fontSize: 24, fontWeight: FontWeight.bold,
+                                      shadows: [Shadow(blurRadius: 3, color: Colors.black38, offset: Offset(1, 1))],
+                                    ),
+                                  ),
+                                  backgroundColor: letterColor,
+                                  labelStyle: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            );
+                            // Envolver con animación de encogimiento si estamos fusionando
+                            if (_isMergingClassic) {
+                              chip = AnimatedBuilder(
+                                animation: _mergeAnimController,
+                                builder: (ctx, child) => Transform.scale(
+                                  scale: _letterShrinkAnim.value,
+                                  child: child,
+                                ),
+                                child: chip,
+                              );
+                            }
                             return Draggable<Map<String, dynamic>>(
                               data: {
                                 'type': 'letter',
@@ -802,18 +1154,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                               childWhenDragging: SizedBox.shrink(),
                               child: GestureDetector(
                                 onTap: () => _speak(letterEntry.value.toUpperCase()),
-                                child: Opacity(
-                                  opacity: isAnimating ? 0 : 1, // Invisible mientras se anima, pero se renderiza
-                                  child: Chip(
-                                    key: isLast ? _nextLetterPositionKey : null,
-                                    label: Text(
-                                      letterEntry.value,
-                                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                    ),
-                                    backgroundColor: Colors.blueAccent,
-                                    labelStyle: TextStyle(color: Colors.white),
-                                  ),
-                                ),
+                                child: chip,
                               ),
                             );
                           }).toList(),
@@ -861,6 +1202,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                           shadowColor: Colors.red.withOpacity(0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.black, width: 2),
                           ),
                         ),
                         child: Text(
@@ -890,7 +1232,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
           Flexible(
             flex: 25,
             child: Padding(
-              padding: EdgeInsets.only(bottom: 10),
+              padding: EdgeInsets.only(bottom: 20),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   const int crossAxisCount = 5;
@@ -936,46 +1278,52 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
             
             // Columna de sílabas con título - Izquierda
             Expanded(
-              flex: 5,
+              flex: 7,
               child: Column(
                 children: [
               // Título con botón de retroceso
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Text(
-                      'Formar Sílabas',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Text(
+                        'Formar Sílabas',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.help_outline_rounded),
-                    onPressed: _mostrarAyuda,
-                    tooltip: 'Ayuda',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.info_outline_rounded),
-                    onPressed: _mostrarEstadisticas,
-                    tooltip: 'Estadísticas',
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.settings_rounded),
-                    onPressed: _mostrarAjustes,
-                    tooltip: 'Ajustes',
+                    SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(Icons.help_outline_rounded),
+                      onPressed: _mostrarAyuda,
+                      tooltip: 'Ayuda',
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.info_outline_rounded),
+                      onPressed: _mostrarEstadisticas,
+                      tooltip: 'Estadísticas',
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.settings_rounded),
+                      onPressed: _mostrarAjustes,
+                      tooltip: 'Ajustes',
                   ),
                 ],
               ),
+              ),
+
+
               // Contenedor de sílabas
               Expanded(
                 child: LayoutBuilder(
@@ -999,6 +1347,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                         ],
                       ),
                       child: Stack(
+                        fit: StackFit.expand,
                         children: [
                           Scrollbar(
                             controller: _scrollController,
@@ -1062,6 +1411,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                                     ..._syllables[_currentBlockIndex].split('').asMap().entries.map((letterEntry) {
                                       final isLast = letterEntry.key == _syllables[_currentBlockIndex].length - 1;
                                       final isAnimating = isLast && _animatingLetter != null;
+                                      final letterColor = _classicLetterColors[letterEntry.key] ?? Colors.blueAccent;
                                       return Draggable<Map<String, dynamic>>(
                                         data: {
                                           'type': 'letter',
@@ -1075,7 +1425,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                                               letterEntry.value,
                                               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                                             ),
-                                            backgroundColor: Colors.blueAccent,
+                                            backgroundColor: letterColor,
                                             labelStyle: TextStyle(color: Colors.white),
                                           ),
                                         ),
@@ -1083,15 +1433,29 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                                         child: GestureDetector(
                                           onTap: () => _speak(letterEntry.value.toUpperCase()),
                                           child: Opacity(
-                                            opacity: isAnimating ? 0 : 1, // Invisible mientras se anima, pero se renderiza
-                                            child: Chip(
-                                              key: isLast ? _nextLetterPositionKey : null,
-                                              label: Text(
-                                                letterEntry.value,
-                                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                            opacity: isAnimating ? 0 : 1,
+                                            child: Material(
+                                              elevation: 4,
+                                              borderRadius: BorderRadius.circular(20),
+                                              child: Chip(
+                                                key: isLast ? _nextLetterPositionKey : null,
+                                                label: Text(
+                                                  letterEntry.value,
+                                                  style: TextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.bold,
+                                                    shadows: [
+                                                      Shadow(
+                                                        blurRadius: 3,
+                                                        color: Colors.black38,
+                                                        offset: Offset(1, 1),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                backgroundColor: letterColor,
+                                                labelStyle: TextStyle(color: Colors.white),
                                               ),
-                                              backgroundColor: Colors.blueAccent,
-                                              labelStyle: TextStyle(color: Colors.white),
                                             ),
                                           ),
                                         ),
@@ -1144,6 +1508,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                         shadowColor: Colors.red.withOpacity(0.6),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.black, width: 2),
                         ),
                       ),
                       child: Text(
@@ -1229,7 +1594,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: candidateData.isNotEmpty ? Colors.red : Colors.grey,
+                  color: candidateData.isNotEmpty ? Colors.red : Colors.red.shade700,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -1262,13 +1627,23 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   }
 
   // Construye un botón de letra con tamaño completamente adaptable
-  // Obtener la letra a mostrar en el teclado (mayúscula al inicio de cada sílaba, minúscula después)
+  // Obtener la letra a mostrar en el teclado según el modo activo
   String _getDisplayLetter(String letter) {
-    // Si el bloque actual está vacío, mostrar mayúscula (inicio de sílaba)
-    if (_syllables[_currentBlockIndex].isEmpty) {
-      return letter; // Mayúscula
+    if (_useModules) {
+      // Modo Moderno: mayúscula al inicio de cada nueva sílaba
+      if (_syllables[_currentBlockIndex].isEmpty) {
+        return letter; // Mayúscula
+      } else {
+        return letter.toLowerCase();
+      }
     } else {
-      return letter.toLowerCase(); // Ya hay contenido: minúscula
+      // Modo Clásico: mayúscula solo si no se ha escrito nada en toda la sesión
+      final nothingTyped = _syllables.every((s) => s.isEmpty);
+      if (nothingTyped) {
+        return letter; // Mayúscula solo al inicio absoluto
+      } else {
+        return letter.toLowerCase();
+      }
     }
   }
 
@@ -1279,6 +1654,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   }
 
   Widget _buildLetterButton(String letter) {
+    final bool isActive = _activeLetters[letter]!;
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calcula el tamaño de fuente basado en el espacio disponible
@@ -1291,32 +1667,43 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         
         final activeColor = _getActiveButtonColor(letter);
         
-        return Container(
-          key: _letterKeys[letter],
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: ElevatedButton(
-            onPressed: _activeLetters[letter]! ? () => _addLetter(letter) : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _activeLetters[letter]! ? activeColor : Colors.grey.shade400,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.all(4),
-              elevation: _activeLetters[letter]! ? 4 : 1,
-              shadowColor: activeColor.withOpacity(0.6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                displayLetter,
-                style: TextStyle(
-                  fontSize: fontSize.clamp(minFontSize, maxFontSize),
-                  fontWeight: FontWeight.bold,
-                  shadows: _activeLetters[letter]! ? [
-                    Shadow(blurRadius: 4, color: Colors.black38, offset: Offset(1, 2)),
-                  ] : null,
+        return AnimatedScale(
+          scale: isActive ? 1.0 : 0.6,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.elasticOut,
+          child: AnimatedOpacity(
+            opacity: isActive ? 1.0 : 0.35,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            child: Container(
+              key: _letterKeys[letter],
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: ElevatedButton(
+                onPressed: isActive ? () => _addLetter(letter) : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isActive ? activeColor : Colors.grey.shade400,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.all(4),
+                  elevation: isActive ? 4 : 1,
+                  shadowColor: activeColor.withOpacity(0.6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.white.withOpacity(0.4), width: 2),
+                  ),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    displayLetter,
+                    style: TextStyle(
+                      fontSize: fontSize.clamp(minFontSize, maxFontSize),
+                      fontWeight: FontWeight.bold,
+                      shadows: isActive ? [
+                        Shadow(blurRadius: 4, color: Colors.black38, offset: Offset(1, 2)),
+                      ] : null,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1342,6 +1729,8 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         return HSLColor.fromAHSL(1.0, (t * 150.0 + 80.0) % 360.0, 0.55, 0.50).toColor();
       case 4: // Noche: índigo → púrpura → azul profundo
         return HSLColor.fromAHSL(1.0, 220.0 + t * 80.0, 0.50, 0.38).toColor();
+      case 5: // Aleatorio: colores al azar por letra
+        return _randomLetterColors[letter] ?? Colors.blueAccent;
       default:
         return HSLColor.fromAHSL(1.0, t * 360.0, 0.60, 0.50).toColor();
     }
@@ -1387,7 +1776,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
           ),
         );
       },
-    );
+    ).then((_) {
+      // Iniciar tutorial de ayuda (sin TTS) después de cerrar el diálogo
+      _startHelpTutorial();
+    });
   }
 
   void _mostrarEstadisticas() {
@@ -1453,9 +1845,13 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                   ),
                   SizedBox(height: 8),
                   _buildLogro('Primera Sílaba', stateManager.logrosDesbloqueados['primera_silaba'] ?? false),
-                  _buildLogro('50 Sílabas Utilizadas', stateManager.logrosDesbloqueados['cincuenta_silabas'] ?? false),
+                  _buildLogro('10 Sílabas Descubiertas', stateManager.logrosDesbloqueados['diez_silabas'] ?? false),
+                  _buildLogro('50 Sílabas Descubiertas', stateManager.logrosDesbloqueados['cincuenta_silabas'] ?? false),
+                  _buildLogro('100 Sílabas Descubiertas', stateManager.logrosDesbloqueados['cien_silabas'] ?? false),
                   _buildLogro('Primera Palabra', stateManager.logrosDesbloqueados['primera_palabra'] ?? false),
                   _buildLogro('10 Palabras Descubiertas', stateManager.logrosDesbloqueados['diez_palabras'] ?? false),
+                  _buildLogro('50 Palabras Descubiertas', stateManager.logrosDesbloqueados['cincuenta_palabras'] ?? false),
+                  _buildLogro('100 Palabras Descubiertas', stateManager.logrosDesbloqueados['cien_palabras'] ?? false),
                 ],
               ),
             ),
@@ -1494,136 +1890,307 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Ajustes', style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold)),
-                  IconButton(icon: Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
-                ],
-              ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ── Modo de visualización ──
-                    ListTile(
-                      leading: Icon(Icons.view_module, color: Colors.blue[700]),
-                      title: Text('Modo de visualización'),
-                      subtitle: Text(_useModules ? 'Moderno' : 'Clásico'),
-                      trailing: Switch(
-                        value: _useModules,
-                        onChanged: (value) async {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setBool('useModules', value);
-                          setDialogState(() {});
-                          setState(() { _useModules = value; });
-                        },
-                      ),
-                    ),
-                    Divider(),
-                    // ── Estilo del teclado ──
-                    ListTile(
-                      leading: Icon(Icons.palette, color: Colors.blue[700]),
-                      title: Text('Estilo del teclado'),
-                      subtitle: Text(_useColorfulKeyboard ? 'Colorido' : 'Uniforme'),
-                      trailing: Switch(
-                        value: _useColorfulKeyboard,
-                        onChanged: (value) async {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setBool('useColorfulKeyboard', value);
-                          setDialogState(() {});
-                          setState(() { _useColorfulKeyboard = value; });
-                        },
-                      ),
-                    ),
-                    // ── Selector de espectro (teclado colorido) ──
-                    if (_useColorfulKeyboard) ...([
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Espectro de colores:', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF667EEA), Color(0xFFF093FB), Color(0xFF43E97B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                padding: EdgeInsets.all(5),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    children: [
+                      // Fondo con imagen
+                      Positioned.fill(
+                        child: Image.asset(
+                          'lib/utils/images/escuela.jpeg',
+                          fit: BoxFit.cover,
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: List.generate(_colorfulSchemeNames.length, (idx) {
-                            final hue = idx * 72.0;
-                            final c = HSLColor.fromAHSL(1.0, hue, 0.60, 0.50).toColor();
-                            return GestureDetector(
-                              onTap: () async {
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setInt('colorfulScheme', idx);
-                                setDialogState(() {});
-                                setState(() { _colorfulScheme = idx; });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: c,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: _colorfulScheme == idx
-                                    ? Border.all(color: Colors.black, width: 2.5)
-                                    : null,
-                                  boxShadow: [BoxShadow(color: c.withOpacity(0.4), blurRadius: 4)],
+                      // Overlay oscuro semitransparente
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.black.withOpacity(0.72), Colors.black.withOpacity(0.55)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Contenido
+                      SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── Título transparente ──
+                              Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('⚙️ Ajustes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: IconButton(
+                                        icon: Icon(Icons.close, color: Colors.white, size: 20),
+                                        constraints: BoxConstraints(minWidth: 36, minHeight: 36),
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () => Navigator.of(context).pop(),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text(_colorfulSchemeNames[idx],
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                               ),
-                            );
-                          }),
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                    ]),
-                    // ── Selector de color uniforme ──
-                    if (!_useColorfulKeyboard) ...([
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('Color del teclado:', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: List.generate(_uniformPalettes.length, (idx) {
-                            final c = _uniformPalettes[idx][0];
-                            return GestureDetector(
-                              onTap: () async {
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setInt('uniformColorIndex', idx);
-                                setDialogState(() {});
-                                setState(() { _uniformColorIndex = idx; });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              Divider(color: Colors.white24, height: 1),
+                              SizedBox(height: 12),
+                              // ── Modo de visualización ──
+                              Container(
+                                width: double.infinity,
                                 decoration: BoxDecoration(
-                                  color: c,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: _uniformColorIndex == idx
-                                    ? Border.all(color: Colors.black, width: 2.5)
-                                    : null,
-                                  boxShadow: [BoxShadow(color: c.withOpacity(0.4), blurRadius: 4)],
+                                  color: Colors.black.withOpacity(0.30),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.blue.withOpacity(0.4), width: 2),
                                 ),
-                                child: Text(_uniformPaletteNames[idx],
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                padding: EdgeInsets.all(12),
+                                margin: EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text('📺 Modo de visualización', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                        ),
+                                        Switch(
+                                          value: _useModules,
+                                          onChanged: (value) async {
+                                            final prefs = await SharedPreferences.getInstance();
+                                            await prefs.setBool('useModules', value);
+                                            setDialogState(() {});
+                                            setState(() { _useModules = value; });
+                                          },
+                                          activeColor: Colors.purple[300],
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 8),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: _useModules
+                                            ? [Colors.purple.withOpacity(0.5), Colors.blue.withOpacity(0.3)]
+                                            : [Colors.grey.withOpacity(0.4), Colors.blueGrey.withOpacity(0.3)],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Colors.white24, width: 1),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _useModules ? '🎯 Moderno' : '📝 Clásico',
+                                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            );
-                          }),
+                              // ── Estilo del teclado ──
+                              Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.30),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.orange.withOpacity(0.4), width: 2),
+                                ),
+                                padding: EdgeInsets.all(12),
+                                margin: EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text('🎨 Estilo del teclado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                        ),
+                                        Switch(
+                                          value: _useColorfulKeyboard,
+                                          onChanged: (value) async {
+                                            final prefs = await SharedPreferences.getInstance();
+                                            await prefs.setBool('useColorfulKeyboard', value);
+                                            setDialogState(() {});
+                                            setState(() { _useColorfulKeyboard = value; });
+                                          },
+                                          activeColor: Colors.orange[300],
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 8),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: _useColorfulKeyboard
+                                            ? [Colors.orange.withOpacity(0.5), Colors.red.withOpacity(0.3)]
+                                            : [Colors.blue.withOpacity(0.4), Colors.teal.withOpacity(0.3)],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Colors.white24, width: 1),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _useColorfulKeyboard ? '🌈 Colorido' : '🔵 Uniforme',
+                                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // ── Selector de espectro / color con animación de rebote ──
+                              AnimatedSwitcher(
+                                duration: Duration(milliseconds: 500),
+                                switchInCurve: Curves.elasticOut,
+                                switchOutCurve: Curves.easeIn,
+                                transitionBuilder: (child, animation) {
+                                  return ScaleTransition(
+                                    scale: animation,
+                                    child: FadeTransition(opacity: animation, child: child),
+                                  );
+                                },
+                                child: _useColorfulKeyboard
+                                  ? Container(
+                                      key: ValueKey('espectro'),
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.30),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.purple.withOpacity(0.4), width: 2),
+                                      ),
+                                      padding: EdgeInsets.all(12),
+                                      margin: EdgeInsets.only(bottom: 12),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('🌈 Selector de espectro:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                          SizedBox(height: 10),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: List.generate(_colorfulSchemeNames.length, (idx) {
+                                              final hue = idx * 72.0;
+                                              final c = HSLColor.fromAHSL(1.0, hue, 0.60, 0.50).toColor();
+                                              return GestureDetector(
+                                                onTap: () async {
+                                                  final prefs = await SharedPreferences.getInstance();
+                                                  await prefs.setInt('colorfulScheme', idx);
+                                                  if (idx == 5) _generateRandomColors();
+                                                  setDialogState(() {});
+                                                  setState(() { _colorfulScheme = idx; });
+                                                },
+                                                child: Transform.scale(
+                                                  scale: _colorfulScheme == idx ? 1.1 : 1.0,
+                                                  child: Container(
+                                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                    decoration: BoxDecoration(
+                                                      color: c,
+                                                      borderRadius: BorderRadius.circular(20),
+                                                      border: _colorfulScheme == idx
+                                                        ? Border.all(color: Colors.white, width: 3)
+                                                        : Border.all(color: Colors.white38, width: 2),
+                                                      boxShadow: _colorfulScheme == idx
+                                                        ? [BoxShadow(color: c.withOpacity(0.6), blurRadius: 8, offset: Offset(0, 4))]
+                                                        : [BoxShadow(color: c.withOpacity(0.3), blurRadius: 4)],
+                                                    ),
+                                                    child: Text(_colorfulSchemeNames[idx],
+                                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                                                  ),
+                                                ),
+                                              );
+                                            }),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : Container(
+                                      key: ValueKey('uniforme'),
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.30),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.teal.withOpacity(0.4), width: 2),
+                                      ),
+                                      padding: EdgeInsets.all(12),
+                                      margin: EdgeInsets.only(bottom: 12),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('🎨 Selector de color:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                          SizedBox(height: 10),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: List.generate(_uniformPalettes.length, (idx) {
+                                              final c = _uniformPalettes[idx][0];
+                                              return GestureDetector(
+                                                onTap: () async {
+                                                  final prefs = await SharedPreferences.getInstance();
+                                                  await prefs.setInt('uniformColorIndex', idx);
+                                                  setDialogState(() {});
+                                                  setState(() { _uniformColorIndex = idx; });
+                                                },
+                                                child: Transform.scale(
+                                                  scale: _uniformColorIndex == idx ? 1.1 : 1.0,
+                                                  child: Container(
+                                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                    decoration: BoxDecoration(
+                                                      color: c,
+                                                      borderRadius: BorderRadius.circular(20),
+                                                      border: _uniformColorIndex == idx
+                                                        ? Border.all(color: Colors.white, width: 3)
+                                                        : Border.all(color: Colors.white38, width: 2),
+                                                      boxShadow: _uniformColorIndex == idx
+                                                        ? [BoxShadow(color: c.withOpacity(0.6), blurRadius: 8, offset: Offset(0, 4))]
+                                                        : [BoxShadow(color: c.withOpacity(0.3), blurRadius: 4)],
+                                                    ),
+                                                    child: Text(_uniformPaletteNames[idx],
+                                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                                                  ),
+                                                ),
+                                              );
+                                            }),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              ),
+                              SizedBox(height: 8),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(height: 8),
-                    ]),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -1829,6 +2396,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       decoration: BoxDecoration(
         color: chipColor,
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
         boxShadow: [
           BoxShadow(
             color: chipColor.withOpacity(0.45),
@@ -1879,6 +2447,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       decoration: BoxDecoration(
         color: Colors.green,
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.green.withOpacity(0.45),

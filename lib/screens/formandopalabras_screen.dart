@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'formandopalabras_teclado_screen.dart';
 import '../services/tts_manager.dart';
 import '../widgets/boton_de_borrar.dart';
+import '../constants/custombar_screen.dart';
 
 class Metodo2Screen extends StatefulWidget {
   const Metodo2Screen({Key? key}) : super(key: key);
@@ -16,6 +17,12 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
     "HUMANIDAD", "HUMANO", "PERSONA", "GENTE", "HOMBRE", "MUJER",
     "SÍ", "NO", "GRACIAS"
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    TtsManager.instance.speak("Formando Palabras");
+  }
 
   // Función para verificar si una cadena es un prefijo válido
   bool _isValidPrefix(String prefix) {
@@ -39,8 +46,9 @@ class _Metodo2ScreenState extends State<Metodo2Screen> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Método 2'),
+      appBar: CustomBar(
+        titleText: 'Formando Palabras',
+        onBackPressed: () => Navigator.pop(context),
       ),
       body: Column(
         children: [

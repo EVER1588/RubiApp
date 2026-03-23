@@ -4,12 +4,20 @@ import '../constants/state_manager.dart';
 class CustomBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onBackPressed;
   final VoidCallback? onResetPressed;
+  final VoidCallback? onHelpPressed;
+  final VoidCallback? onInfoPressed;
+  final VoidCallback? onSettingsPressed;
   final int? score;
+  final String? titleText;
 
   CustomBar({
     required this.onBackPressed,
     this.onResetPressed,
+    this.onHelpPressed,
+    this.onInfoPressed,
+    this.onSettingsPressed,
     this.score,
+    this.titleText,
   });
 
   @override
@@ -23,10 +31,22 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[700]!, Colors.blue[500]!],
+            colors: [
+              Color(0xFF667EEA),  // Púrpura
+              Color(0xFF764BA2),  // Púrpura oscuro
+              Color(0xFFF093FB),  // Rosa
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+            stops: [0.0, 0.5, 1.0],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
       ),
       leading: Align(
@@ -56,34 +76,36 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       leadingWidth: 60,
       centerTitle: false,
-      title: score != null
-          ? Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.star_rounded, color: Colors.amber[300], size: 20),
-                  SizedBox(width: 4),
-                  Text(
-                    score.toString(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+      title: titleText != null
+          ? Text(titleText!, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18))
+          : (score != null
+              ? Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
-                ],
-              ),
-            )
-          : null,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, color: Colors.amber[300], size: 20),
+                      SizedBox(width: 4),
+                      Text(
+                        score.toString(),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : null),
       actions: [
         if (onResetPressed != null)
           IconButton(
@@ -95,18 +117,26 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         IconButton(
           icon: Icon(Icons.help_outline_rounded, color: Colors.white, size: 20),
-          onPressed: () => _mostrarAyuda(context),
+          onPressed: onHelpPressed ?? () => _mostrarAyuda(context),
           tooltip: 'Ayuda',
           padding: EdgeInsets.symmetric(horizontal: 8),
           constraints: BoxConstraints(minWidth: 40, minHeight: 40),
         ),
         IconButton(
           icon: Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
-          onPressed: () => _mostrarInformacion(context),
+          onPressed: onInfoPressed ?? () => _mostrarInformacion(context),
           tooltip: 'Estadísticas',
           padding: EdgeInsets.symmetric(horizontal: 8),
           constraints: BoxConstraints(minWidth: 40, minHeight: 40),
         ),
+        if (onSettingsPressed != null)
+          IconButton(
+            icon: Icon(Icons.settings_rounded, color: Colors.white, size: 20),
+            onPressed: onSettingsPressed,
+            tooltip: 'Ajustes',
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            constraints: BoxConstraints(minWidth: 40, minHeight: 40),
+          ),
       ],
     );
   }
@@ -218,6 +248,23 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
                           fontWeight: FontWeight.bold, fontSize: 14)),
                   SizedBox(height: 8),
                   _buildLogro(
+                    'Primera Sílaba',
+                    stateManager.logrosDesbloqueados['primera_silaba'] ?? false,
+                  ),
+                  _buildLogro(
+                    '10 Sílabas Descubiertas',
+                    stateManager.logrosDesbloqueados['diez_silabas'] ?? false,
+                  ),
+                  _buildLogro(
+                    '50 Sílabas Descubiertas',
+                    stateManager.logrosDesbloqueados['cincuenta_silabas'] ??
+                        false,
+                  ),
+                  _buildLogro(
+                    '100 Sílabas Descubiertas',
+                    stateManager.logrosDesbloqueados['cien_silabas'] ?? false,
+                  ),
+                  _buildLogro(
                     'Primera Palabra',
                     stateManager.logrosDesbloqueados['primera_palabra'] ??
                         false,
@@ -227,13 +274,12 @@ class CustomBar extends StatelessWidget implements PreferredSizeWidget {
                     stateManager.logrosDesbloqueados['diez_palabras'] ?? false,
                   ),
                   _buildLogro(
-                    'Primera Sílaba',
-                    stateManager.logrosDesbloqueados['primera_silaba'] ?? false,
+                    '50 Palabras Descubiertas',
+                    stateManager.logrosDesbloqueados['cincuenta_palabras'] ?? false,
                   ),
                   _buildLogro(
-                    '50 Sílabas Utilizadas',
-                    stateManager.logrosDesbloqueados['cincuenta_silabas'] ??
-                        false,
+                    '100 Palabras Descubiertas',
+                    stateManager.logrosDesbloqueados['cien_palabras'] ?? false,
                   ),
                 ],
               ),

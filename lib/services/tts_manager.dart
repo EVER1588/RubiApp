@@ -3,9 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TtsManager {
   // Ajusta manualmente estas 3 líneas para cambiar cada preset.
-  static const double slowPresetRate = 0.30;
-  static const double normalPresetRate = 0.40;
-  static const double fastPresetRate = 0.50;
+  static const double slowPresetRate = 0.40;
+  static const double normalPresetRate = 0.50;
+  static const double fastPresetRate = 0.55;
 
   TtsManager._internal();
   static final TtsManager instance = TtsManager._internal();
@@ -13,9 +13,9 @@ class TtsManager {
   factory TtsManager() => instance;
 
   final FlutterTts _tts = FlutterTts();
-  double rate = 0.5;
+  double rate = 0.5;  
   double volume = 1.0;
-  String language = 'es-US';
+  String language = 'es-MX';
 
 
   // Pronunciación fonética de letras y sílabas especiales
@@ -29,7 +29,7 @@ class TtsManager {
     'Y': 'ye', 'Z': 'zeta',
 
     // Sílabas especiales y dígrafos
-    'BLE': 'blé', 'CE': 'cé', 'CU': 'cú', 'CLA': 'clá', 'CLI': 'clí',
+    'BE': 'bé', 'BLE': 'blé', 'CE': 'cé', 'CU': 'cú', 'CLA': 'clá', 'CLI': 'clí',
     'CLO': 'cló', 'CLU': 'clú', 'FLA': 'flá', 'FRA': 'frá', 'GE': 'gué',
     'GI': 'guí', 'GO': 'gó', 'HI': 'i', 'HO': 'o', 'HU': 'u',
     'JE': 'jé', 'JO': 'jó', 'JU': 'jú', 'KE': 'que', 'TO': 'tó',

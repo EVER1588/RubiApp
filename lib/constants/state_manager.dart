@@ -38,10 +38,14 @@ class StateManager {
 
   // Mapa para rastrear logros desbloqueados
   Map<String, bool> logrosDesbloqueados = {
+    'primera_silaba': false,
+    'diez_silabas': false,
+    'cincuenta_silabas': false,
+    'cien_silabas': false,
     'primera_palabra': false,
     'diez_palabras': false,
-    'primera_silaba': false,
-    'cincuenta_silabas': false,
+    'cincuenta_palabras': false,
+    'cien_palabras': false,
   };
 
   void clearMetodo2State() {
@@ -92,10 +96,14 @@ class StateManager {
     
     // Cargar logros
     logrosDesbloqueados = {
+      'primera_silaba': prefs.getBool('logro_primera_silaba') ?? false,
+      'diez_silabas': prefs.getBool('logro_diez_silabas') ?? false,
+      'cincuenta_silabas': prefs.getBool('logro_cincuenta_silabas') ?? false,
+      'cien_silabas': prefs.getBool('logro_cien_silabas') ?? false,
       'primera_palabra': prefs.getBool('logro_primera_palabra') ?? false,
       'diez_palabras': prefs.getBool('logro_diez_palabras') ?? false,
-      'primera_silaba': prefs.getBool('logro_primera_silaba') ?? false,
-      'cincuenta_silabas': prefs.getBool('logro_cincuenta_silabas') ?? false,
+      'cincuenta_palabras': prefs.getBool('logro_cincuenta_palabras') ?? false,
+      'cien_palabras': prefs.getBool('logro_cien_palabras') ?? false,
     };
   }
 
@@ -115,6 +123,12 @@ class StateManager {
         if (palabrasUnicas.length == 10) {
           logrosDesbloqueados['diez_palabras'] = true;
         }
+        if (palabrasUnicas.length >= 50) {
+          logrosDesbloqueados['cincuenta_palabras'] = true;
+        }
+        if (palabrasUnicas.length >= 100) {
+          logrosDesbloqueados['cien_palabras'] = true;
+        }
       }
     }
 
@@ -123,8 +137,14 @@ class StateManager {
       if (totalSilabasUsadas == 1) {
         logrosDesbloqueados['primera_silaba'] = true;
       }
-      if (totalSilabasUsadas == 50) {
+      if (totalSilabasUsadas >= 10) {
+        logrosDesbloqueados['diez_silabas'] = true;
+      }
+      if (totalSilabasUsadas >= 50) {
         logrosDesbloqueados['cincuenta_silabas'] = true;
+      }
+      if (totalSilabasUsadas >= 100) {
+        logrosDesbloqueados['cien_silabas'] = true;
       }
     }
 

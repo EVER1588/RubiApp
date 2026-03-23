@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'item_detail_screen.dart';
 import '../constants/custombar_screen.dart';
+import '../services/tts_manager.dart';
 
 class ColoresScreen extends StatefulWidget {
   @override
@@ -9,6 +10,10 @@ class ColoresScreen extends StatefulWidget {
 }
 
 class _ColoresScreenState extends State<ColoresScreen> {
+  int _itemSize = 1;
+  int _getPortraitColumns() => [3, 2, 1][_itemSize];
+  int _getLandscapeColumns() => [5, 4, 3][_itemSize];
+
   List<Map<String, dynamic>> colores = [
     {"nombre": "Rojo", "imagen": "lib/utils/images/colores/rojo.jpeg"},
     {"nombre": "Azul", "imagen": "lib/utils/images/colores/azul.jpeg"},
@@ -30,6 +35,15 @@ class _ColoresScreenState extends State<ColoresScreen> {
   void initState() {
     super.initState();
     _cargarProgreso();
+    _loadItemSize();
+    TtsManager.instance.speak("Colores");
+  }
+
+  Future<void> _loadItemSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _itemSize = prefs.getInt('metodo3ItemSize') ?? 1;
+    });
   }
 
   Future<void> _cargarProgreso() async {
@@ -77,24 +91,23 @@ class _ColoresScreenState extends State<ColoresScreen> {
   }
 
   void _seleccionarColor(String color) async {
-    Map<String, dynamic>? colorSeleccionado = colores.firstWhere(
-      (item) => item["nombre"] == color,
-    );
+    final int index = colores.indexWhere((c) => c['nombre'] == color);
+    Map<String, dynamic> colorSeleccionado = colores[index];
     
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ItemDetailScreen(
           nombre: colorSeleccionado["nombre"],
           imagen: colorSeleccionado["imagen"],
           categoria: "Colores",
+          allItems: colores,
+          currentIndex: index,
         ),
       ),
     );
 
-    if (result != null && result['completado'] == true) {
-      await _marcarComoCompletado(color);
-    }
+    await _cargarProgreso();
   }
 
   @override
@@ -120,7 +133,9 @@ class _ColoresScreenState extends State<ColoresScreen> {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              Container(
+              GestureDetector(
+                onTap: () => TtsManager.instance.speak("Selecciona un color para aprender a escribir su nombre"),
+                child: Container(
                 padding: EdgeInsets.all(15),
                 margin: EdgeInsets.only(bottom: 15),
                 decoration: BoxDecoration(
@@ -138,16 +153,20 @@ class _ColoresScreenState extends State<ColoresScreen> {
                   "Selecciona un color para aprender a escribir su nombre",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(1, 2)),
+                    ],
                   ),
                 ),
+              ),
               ),
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 2 : 4,
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns() : _getLandscapeColumns(),
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,
@@ -235,7 +254,10 @@ class _ColoresScreenState extends State<ColoresScreen> {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 18,
+                            shadows: [
+                              Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(1, 2)),
+                            ],
                           ),
                         ),
                       ),

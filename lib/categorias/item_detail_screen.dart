@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/custombar_screen.dart'; // Agregar esta importación
 import '../services/tts_manager.dart';
 import '../constants/state_manager.dart';
@@ -8,24 +9,70 @@ class ItemDetailScreen extends StatefulWidget {
   final String nombre;
   final String imagen;
   final String categoria;
+  final List<Map<String, dynamic>>? allItems;
+  final int? currentIndex;
   
   const ItemDetailScreen({
     Key? key,
     required this.nombre,
     required this.imagen,
     required this.categoria,
+    this.allItems,
+    this.currentIndex,
   }) : super(key: key);
 
   @override
   _ItemDetailScreenState createState() => _ItemDetailScreenState();
 }
 
-class _ItemDetailScreenState extends State<ItemDetailScreen> {
+class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> silabas = [];
   List<Map<String, dynamic>> silabasColocadas = [];
   List<String> silabasOriginales = [];
 
   final TtsManager ttsManager = TtsManager();
+
+  // Controlador para animación de respiración del botón Siguiente
+  late AnimationController _breathController;
+  late Animation<double> _breathAnim;
+
+  // ─── Variables para el tutorial con manita ───────────────────────────────
+  bool _showTutorial = false;
+  bool _tutorialCompleted = false;
+  late AnimationController _handAnimController;
+  int _tutorialSequenceId = 0;
+  int _tutorialStep = 0; // 0: bounce sílaba 1, 1: drag al slot 1, 2: bounce sílaba 2, 3: drag al slot 2
+  GlobalKey _firstSyllableKey = GlobalKey();
+  GlobalKey _firstSlotKey = GlobalKey();
+  GlobalKey _secondSyllableKey = GlobalKey();
+  GlobalKey _secondSlotKey = GlobalKey();
+  bool _tutorialStartedOnCurrentScreen = false;
+
+  static const String _describeImagenTutorialShownKey = 'describe_imagen_tutorial_shown';
+  
+  // Controlar si hay un diálogo abierto
+  bool _isDialogOpen = false;
+
+  // Clave de SharedPreferences para guardar progreso
+  String get _completadosKey {
+    const Map<String, String> keys = {
+      'Animales': 'animales_completados',
+      'Frutas': 'frutas_completados',
+      'Verduras': 'verduras_completados',
+      'Colores': 'colores_completados',
+      'Números': 'numeros_completados',
+    };
+    return keys[widget.categoria] ?? '${widget.categoria.toLowerCase()}_completados';
+  }
+
+  Future<void> _guardarCompletado() async {
+    final prefs = await SharedPreferences.getInstance();
+    final completados = prefs.getStringList(_completadosKey) ?? [];
+    if (!completados.contains(widget.nombre)) {
+      completados.add(widget.nombre);
+      await prefs.setStringList(_completadosKey, completados);
+    }
+  }
 
   // Agregar esta variable de estado
   bool _isImageEnlarged = false;
@@ -65,25 +112,364 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   void initState() {
     super.initState();
     ttsManager.initialize();
+    TtsManager.instance.speak(widget.nombre);
     _dividirEnSilabas();
     silabasColocadas = List.generate(
       silabasOriginales.length,
       (index) => {"silaba": "", "ocupado": false, "id": null},
     );
+    _breathController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+    _breathAnim = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
+    );
+    
+    // Inicializar animaciones del tutorial
+    _handAnimController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500),
+    );
+    // Verificar si debe mostrarse el tutorial
+    _checkTutorial();
+  }
+
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool tutorialAlreadyShown = prefs.getBool(_describeImagenTutorialShownKey) ?? false;
+
+    if (_isTutorialEligibleLevel && !tutorialAlreadyShown) {
+      // Esperar un momento para que la UI se construya
+      await Future.delayed(Duration(milliseconds: 800));
+      if (mounted) {
+        _launchTutorial();
+      }
+    }
+  }
+
+  bool get _isTutorialEligibleLevel {
+    return widget.currentIndex != null && widget.currentIndex! < 2;
+  }
+
+  void _launchTutorial() {
+    if (!mounted || silabasOriginales.length < 2) return;
+
+    setState(() {
+      _showTutorial = true;
+      _tutorialCompleted = false;
+      _tutorialStartedOnCurrentScreen = true;
+      _tutorialStep = 0;
+      _firstSyllableKey = GlobalKey();
+      _firstSlotKey = GlobalKey();
+      _secondSyllableKey = GlobalKey();
+      _secondSlotKey = GlobalKey();
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _showTutorial) {
+        _setTutorialStep(0);
+      }
+    });
+  }
+
+  void _setTutorialStep(int step) {
+    if (!mounted) return;
+
+    final int sequenceId = ++_tutorialSequenceId;
+
+    setState(() {
+      _tutorialStep = step;
+    });
+
+    _handAnimController.stop();
+
+    final bool isBounceStep = step == 0 || step == 2;
+    if (isBounceStep) {
+      _handAnimController.duration = const Duration(milliseconds: 850);
+      _handAnimController.repeat(reverse: true);
+
+      Future.delayed(const Duration(milliseconds: 1600), () {
+        if (!mounted || !_showTutorial || _tutorialStep != step || _tutorialSequenceId != sequenceId) {
+          return;
+        }
+        _setTutorialStep(step + 1);
+      });
+      return;
+    }
+
+    _handAnimController.duration = const Duration(milliseconds: 1250);
+    _loopTutorialDragStep(step, sequenceId);
+  }
+
+  Future<void> _loopTutorialDragStep(int step, int sequenceId) async {
+    while (mounted && _showTutorial && _tutorialStep == step && _tutorialSequenceId == sequenceId) {
+      await _handAnimController.forward(from: 0.0);
+      if (!mounted || !_showTutorial || _tutorialStep != step || _tutorialSequenceId != sequenceId) {
+        return;
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+  }
+
+  double _getTutorialOverlayOpacity(double progress) {
+    final double safeProgress = progress.clamp(0.0, 1.0);
+    if (progress <= 0.12) {
+      final double fadeInT = (safeProgress / 0.12).clamp(0.0, 1.0);
+      return Curves.easeOut.transform(fadeInT);
+    }
+    if (safeProgress >= 0.82) {
+      final double fadeOutT = ((safeProgress - 0.82) / 0.18).clamp(0.0, 1.0);
+      return 1 - Curves.easeIn.transform(fadeOutT);
+    }
+    return 1.0;
+  }
+
+  Future<void> _markTutorialCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_describeImagenTutorialShownKey, true);
+    setState(() {
+      _tutorialCompleted = true;
+      _showTutorial = false;
+    });
+    _tutorialSequenceId++;
+    _handAnimController.stop();
+  }
+
+  @override
+  void dispose() {
+    _breathController.dispose();
+    _handAnimController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     
-    return Scaffold(
-      appBar: CustomBar(
-        onBackPressed: () {
-          Navigator.pop(context);
-        },
-      ),
-      body: isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: CustomBar(
+            onBackPressed: () {
+              Navigator.pop(context);
+            },
+            onHelpPressed: _mostrarAyuda,
+          ),
+          body: isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
+        ),
+        // Overlay del tutorial con manita
+        if (_showTutorial) _buildTutorialOverlay(),
+      ],
     );
+  }
+
+  // Widget del tutorial con manita animada (usa imagen manita.png)
+  Widget _buildTutorialOverlay() {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _handAnimController,
+          builder: (context, child) {
+            // Seleccionar keys según el paso del tutorial
+            final bool isSecondPair = _tutorialStep >= 2;
+            final syllableKey = isSecondPair ? _secondSyllableKey : _firstSyllableKey;
+            final slotKey = isSecondPair ? _secondSlotKey : _firstSlotKey;
+            final String tutorialSyllable = _getTutorialSyllableText(isSecondPair);
+
+            Offset? syllablePos = _getWidgetCenter(syllableKey);
+            Offset? slotPos = _getWidgetCenter(slotKey);
+            final Size syllableSize = _getWidgetSize(syllableKey) ?? const Size(75, 75);
+            final Size slotSize = _getWidgetSize(slotKey) ?? const Size(75, 75);
+            
+            if (syllablePos == null) return SizedBox.shrink();
+            
+            const double handSize = 200.0;
+            final double overlayOpacity = _getTutorialOverlayOpacity(_handAnimController.value);
+            
+            Offset targetPos;
+            final bool isBounceStep = (_tutorialStep == 0 || _tutorialStep == 2);
+            final bool isDragStep = !isBounceStep && slotPos != null;
+            if (isBounceStep || slotPos == null) {
+              // Paso de rebote sobre la sílaba
+              final bounce = sin(_handAnimController.value * 3.14159 * 2) * 8;
+              targetPos = Offset(syllablePos.dx, syllablePos.dy + bounce);
+            } else {
+              // Paso de arrastre de la sílaba al slot
+              final t = _handAnimController.value;
+              targetPos = Offset(
+                syllablePos.dx + (slotPos.dx - syllablePos.dx) * t,
+                syllablePos.dy + (slotPos.dy - syllablePos.dy) * t,
+              );
+            }
+            
+            // Centrar la imagen en el punto objetivo (la punta del dedo está en el centro de la imagen)
+            final handCenter = isDragStep
+                ? Offset(targetPos.dx + 42, targetPos.dy + 48)
+                : targetPos;
+            final handX = handCenter.dx - handSize / 2;
+            final handY = handCenter.dy - handSize / 2;
+            
+            return Stack(
+              children: [
+                if (isDragStep)
+                  _buildTutorialDragSyllable(
+                    text: tutorialSyllable,
+                    center: targetPos,
+                    sourceSize: syllableSize,
+                    targetSize: slotSize,
+                    progress: _handAnimController.value,
+                    opacity: overlayOpacity,
+                  ),
+                Positioned(
+                  left: handX,
+                  top: handY,
+                  child: Opacity(
+                    opacity: overlayOpacity,
+                    child: Image.asset(
+                      'lib/utils/images/fondos/manita.png',
+                      width: handSize,
+                      height: handSize,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Obtener el centro de un widget por su GlobalKey
+  Offset? _getWidgetCenter(GlobalKey key) {
+    try {
+      final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return null;
+      final position = renderBox.localToGlobal(Offset.zero);
+      return Offset(
+        position.dx + renderBox.size.width / 2,
+        position.dy + renderBox.size.height / 2,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Size? _getWidgetSize(GlobalKey key) {
+    try {
+      final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return null;
+      return renderBox.size;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _getTutorialSyllableText(bool isSecondPair) {
+    if (silabasOriginales.isEmpty) return '';
+    if (isSecondPair && silabasOriginales.length > 1) return silabasOriginales[1];
+    return silabasOriginales.first;
+  }
+
+  Widget _buildTutorialDragSyllable({
+    required String text,
+    required Offset center,
+    required Size sourceSize,
+    required Size targetSize,
+    required double progress,
+    required double opacity,
+  }) {
+    final double width = sourceSize.width + (targetSize.width - sourceSize.width) * progress;
+    final double height = sourceSize.height + (targetSize.height - sourceSize.height) * progress;
+    final double fontSize = (height * 0.27).clamp(14.0, 22.0);
+
+    return Positioned(
+      left: center.dx - width / 2,
+      top: center.dy - height / 2,
+      child: Opacity(
+        opacity: opacity * 0.95,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: categoryColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.yellow, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.yellow.withOpacity(0.45),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _mostrarAyuda() async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ayuda',
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '📖 Cómo jugar:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                SizedBox(height: 8),
+                Text('1. Observa la imagen y forma la palabra correcta'),
+                Text('2. Arrastra las sílabas al área de construcción'),
+                Text('3. Completa la palabra en el orden correcto'),
+                Text('4. Si quieres, sigue la guía visual de la manita'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (mounted) {
+      _launchTutorial();
+    }
   }
 
   // Layout para modo vertical (portrait)
@@ -557,8 +943,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget _buildTargetBox(int index, {double size = 75.0}) {
     final double fontSize = (size * 0.27).clamp(14.0, 22.0);
     final double marginH = (size * 0.1).clamp(4.0, 10.0);
+    
+    // Zócalos del tutorial
+    final bool isFirstSlot = index == 0;
+    final bool isSecondSlot = index == 1;
+    final bool showTutorialHighlight = _showTutorial && (
+        (isFirstSlot && _tutorialStep == 1) ||
+        (isSecondSlot && _tutorialStep == 3));
 
     return DragTarget<Map<String, dynamic>>(
+      key: isFirstSlot ? _firstSlotKey : isSecondSlot ? _secondSlotKey : null,
       builder: (context, candidateData, rejectedData) {
         return GestureDetector(
           onTap: () {
@@ -580,9 +974,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             height: size,
             margin: EdgeInsets.symmetric(horizontal: marginH),
             decoration: BoxDecoration(
-              color: silabasColocadas[index]["ocupado"] == true ? categoryColor : Colors.grey[200],
+              color: silabasColocadas[index]["ocupado"] == true 
+                  ? categoryColor 
+                  : showTutorialHighlight 
+                      ? Colors.yellow.withOpacity(0.3) 
+                      : Colors.grey[200],
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: categoryColor.withOpacity(0.5)),
+              border: Border.all(
+                color: showTutorialHighlight 
+                    ? Colors.yellow 
+                    : categoryColor.withOpacity(0.5),
+                width: showTutorialHighlight ? 3 : 1,
+              ),
+              boxShadow: showTutorialHighlight
+                  ? [BoxShadow(color: Colors.yellow.withOpacity(0.5), blurRadius: 10, spreadRadius: 2)]
+                  : null,
             ),
             child: Center(
               child: silabasColocadas[index]["ocupado"] == true
@@ -608,13 +1014,23 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             "id": data["id"],
           };
         });
+
+        if (_showTutorial) {
+          if (index == 0 && _tutorialStep <= 1) {
+            _setTutorialStep(2);
+          } else if (index == 1 && _tutorialStep >= 2) {
+            _tutorialSequenceId++;
+            _handAnimController.stop();
+            setState(() {
+              _showTutorial = false;
+            });
+          }
+        }
         
         // Verificar si todas las sílabas han sido colocadas
         bool todasColocadas = silabasColocadas.every((s) => s["ocupado"] == true);
         
         if (todasColocadas) {
-          // Si es la última sílaba, leer la palabra completa
-          decirTexto(widget.nombre);
           _verificarPalabra();
         } else {
           // Si no es la última sílaba, leer solo la sílaba que se colocó
@@ -631,6 +1047,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     
     // Verificar si la sílaba ya ha sido usada
     final bool isUsed = silabasColocadas.any((s) => s["id"] == silaba["id"] && s["ocupado"] == true);
+    
+    // Determinar si esta sílaba corresponde al tutorial
+    final bool isFirstTutorialSyllable = _showTutorial && 
+        silabasOriginales.isNotEmpty && 
+        silaba["silaba"] == silabasOriginales[0] &&
+        _tutorialStep <= 1;
+    final bool isSecondTutorialSyllable = _showTutorial && 
+        silabasOriginales.length > 1 && 
+        silaba["silaba"] == silabasOriginales[1] &&
+        _tutorialStep >= 2;
+    final bool isTutorialSyllable = isFirstTutorialSyllable || isSecondTutorialSyllable;
 
     // Si ya está usada, mostrar solo el contenedor gris
     if (isUsed) {
@@ -645,6 +1072,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
 
     final Widget childWidget = GestureDetector(
+      key: isFirstTutorialSyllable ? _firstSyllableKey : isSecondTutorialSyllable ? _secondSyllableKey : null,
       onTap: () {
         decirTexto(silaba["silaba"], esSilaba: true);
       },
@@ -652,8 +1080,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: categoryColor,
+          color: isTutorialSyllable && _showTutorial 
+              ? categoryColor.withOpacity(0.9) // Resaltar la sílaba del tutorial
+              : categoryColor,
           borderRadius: BorderRadius.circular(10),
+          border: isTutorialSyllable && _showTutorial
+              ? Border.all(color: Colors.yellow, width: 3)
+              : null,
         ),
         child: Center(
           child: Text(
@@ -728,7 +1161,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     if (silabasColocadas.every((s) => s["ocupado"] == true)) {
       if (palabraFormada == widget.nombre.toUpperCase()) {
-        decirTexto(widget.nombre);
+        decirTexto('${widget.nombre}. ¡muy bien! intentemos la siguiénte');
+        
+        // Guardar como completado INMEDIATAMENTE
+        _guardarCompletado();
         
         // Actualizar estadísticas: contar la palabra y sus sílabas
         final stateManager = StateManager();
@@ -743,105 +1179,385 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         // Seleccionar un GIF aleatorio
         final random = Random();
         final randomGif = celebrationGifs[random.nextInt(celebrationGifs.length)];
+
+        // Verificar si hay siguiente ejercicio
+        final bool haySiguiente = widget.allItems != null &&
+            widget.currentIndex != null &&
+            widget.currentIndex! + 1 < widget.allItems!.length;
+        
+        // Marcar tutorial como completado si aplica
+        if (_tutorialStartedOnCurrentScreen && !_tutorialCompleted) {
+          _markTutorialCompleted();
+        }
+        
+        setState(() {
+          _isDialogOpen = true;
+        });
         
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) {
+          builder: (BuildContext dialogContext) {
+            // Obtener dimensiones de pantalla para tamaño adaptable
+            final screenSize = MediaQuery.of(dialogContext).size;
+            final isSmallScreen = screenSize.width < 360 || screenSize.height < 600;
+            final mainImageSize = isSmallScreen ? 180.0 : 260.0;
+            final gifSize = isSmallScreen ? 130.0 : 160.0;
+            final padding = isSmallScreen ? 12.0 : 16.0;
+            
             return Dialog(
               backgroundColor: Colors.transparent,
               elevation: 0,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 300,
-                  maxHeight: 400,
-                ),
+              insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, _) {
+                  if (!didPop) {
+                    Navigator.pop(dialogContext);
+                    setState(() { _isDialogOpen = false; });
+                    _reiniciarEjercicio();
+                  }
+                },
                 child: Container(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                constraints: BoxConstraints(
+                  maxWidth: isSmallScreen ? screenSize.width * 0.92 : 410,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF667EEA), Color(0xFFF093FB), Color(0xFF43E97B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: EdgeInsets.all(4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: Image.asset(
-                            randomGif,
-                            width: 200,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          ),
+                      Positioned.fill(
+                        child: Image.asset(
+                          'lib/utils/images/escuela.jpeg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(color: Color(0xFF667EEA)),
                         ),
                       ),
-                      SizedBox(height: 20),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              backgroundColor: categoryColor,
+                      Positioned.fill(
+                        child: Container(color: Colors.black.withOpacity(0.55)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(padding),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.white, width: 2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.asset(
+                                  widget.imagen,
+                                  width: mainImageSize,
+                                  height: mainImageSize,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    width: mainImageSize,
+                                    height: mainImageSize,
+                                    color: Colors.grey[300],
+                                    child: Icon(Icons.image, size: 40, color: Colors.grey),
+                                  ),
+                                ),
+                              ),
                             ),
-                            child: Text(
-                              'Intentar otro',
-                              style: TextStyle(fontSize: 16),
+                            SizedBox(height: 10),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.white, width: 2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.asset(
+                                  randomGif,
+                                  width: gifSize,
+                                  height: gifSize,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _reiniciarEjercicio();
-                            },
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              backgroundColor: categoryColor,
+                            SizedBox(height: 12),
+                            Text(
+                              '¡Muy bien! 🎉',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 18 : 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(blurRadius: 4, color: Colors.black54, offset: Offset(1, 2)),
+                                ],
+                              ),
                             ),
-                            child: Text(
-                              'Siguiente',
-                              style: TextStyle(fontSize: 16),
+                            SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              alignment: WrapAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isSmallScreen ? 14 : 18, 
+                                      vertical: isSmallScreen ? 8 : 10,
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  child: Text(
+                                    'Intentar otro',
+                                    style: TextStyle(fontSize: isSmallScreen ? 13 : 15, color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext);
+                                    setState(() {
+                                      _isDialogOpen = false;
+                                    });
+                                    _reiniciarEjercicio();
+                                  },
+                                ),
+                                AnimatedBuilder(
+                                  animation: _breathAnim,
+                                  builder: (context, child) {
+                                    return Transform.scale(
+                                      scale: haySiguiente ? _breathAnim.value : 1.0,
+                                      child: child,
+                                    );
+                                  },
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isSmallScreen ? 14 : 18, 
+                                        vertical: isSmallScreen ? 8 : 10,
+                                      ),
+                                      backgroundColor: Colors.green,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: Text(
+                                      haySiguiente ? 'Siguiente ▶' : 'Volver',
+                                      style: TextStyle(fontSize: isSmallScreen ? 13 : 15, color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                    onPressed: () {
+                                    Navigator.pop(dialogContext); // Cierra el diálogo
+                                    setState(() {
+                                      _isDialogOpen = false;
+                                    });
+                                    if (haySiguiente) {
+                                      final nextItem = widget.allItems![widget.currentIndex! + 1];
+                                      Navigator.pushReplacement(
+                                        this.context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ItemDetailScreen(
+                                            nombre: nextItem['nombre'],
+                                            imagen: nextItem['imagen'],
+                                            categoria: widget.categoria,
+                                            allItems: widget.allItems,
+                                            currentIndex: widget.currentIndex! + 1,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.pop(this.context, {'completado': true});
+                                    }
+                                  },
+                                  ),
+                                ),
+                              ],
                             ),
-                            onPressed: () {
-                              Navigator.pop(context); // Cierra el diálogo
-                              Navigator.pop(context, {'completado': true}); // Retorna a la lista de animales
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
+              ),
             );
           },
         );
       } else {
-        // Si la palabra está mal formada
+        // Determinar tipo de error: sílabas incorrectas vs orden incorrecto
+        List<String> silabasUsadas = silabasColocadas
+            .where((s) => s["ocupado"] == true)
+            .map((s) => s["silaba"] as String)
+            .toList();
+        List<String> sortedUsadas = [...silabasUsadas]..sort();
+        List<String> sortedOriginales = [...silabasOriginales]..sort();
+        final bool mismasSilabas = sortedUsadas.join() == sortedOriginales.join();
+
+        String fraseError;
+        if (mismasSilabas) {
+          fraseError = '¡¡Casi lo tienes!!, están en el orden incorrecto.';
+        } else {
+          final List<String> opciones = [
+            '¡Casi lo logras!, ¡inténtalo otra vez!!',
+            '¡¡Estás muy cerca!!, ¡inténtalo otra vez!',
+            '¡Sigue intentándolo!',
+          ];
+          fraseError = opciones[Random().nextInt(opciones.length)];
+        }
+
+        decirTexto(fraseError);
+
+        setState(() {
+          _isDialogOpen = true;
+        });
+
         showDialog(
           context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.orange),
-                  SizedBox(width: 10),
-                  Text('¡Inténtalo de nuevo!'),
-                ],
-              ),
-              content: Text('Las sílabas no están en el orden correcto.'),
-              actions: [
-                TextButton(
-                  child: Text('Continuar'),
-                  onPressed: () {
-                    Navigator.pop(context);
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            // Obtener dimensiones de pantalla para tamaño adaptable
+            final screenSize = MediaQuery.of(dialogContext).size;
+            final isSmallScreen = screenSize.width < 360 || screenSize.height < 600;
+            final dialogSize = isSmallScreen 
+                ? screenSize.width * 0.85 
+                : min(screenSize.width * 0.75, 320.0);
+            final imageSize = isSmallScreen ? 100.0 : 120.0;
+            final fontSize = isSmallScreen ? 14.0 : 16.0;
+            final padding = isSmallScreen ? 12.0 : 16.0;
+            
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, _) {
+                  if (!didPop) {
+                    Navigator.pop(dialogContext);
+                    setState(() { _isDialogOpen = false; });
                     _reiniciarEjercicio();
-                  },
+                  }
+                },
+                child: Container(
+                width: dialogSize,
+                constraints: BoxConstraints(
+                  maxWidth: dialogSize,
+                  maxHeight: dialogSize * 1.1, // Casi cuadrado
                 ),
-              ],
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF667EEA), Color(0xFFF093FB), Color(0xFF43E97B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: EdgeInsets.all(4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.asset(
+                          'lib/utils/images/escuela.jpeg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(color: Color(0xFF667EEA)),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Container(color: Colors.black.withOpacity(0.55)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(padding),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(dialogContext);
+                                  setState(() {
+                                    _isDialogOpen = false;
+                                  });
+                                  _reiniciarEjercicio();
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.asset(
+                                    'lib/utils/images/fondos/intento.jpg',
+                                    width: imageSize,
+                                    height: imageSize,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (ctx, err, st) => Container(
+                                      width: imageSize,
+                                      height: imageSize,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.sentiment_dissatisfied_rounded,
+                                        size: isSmallScreen ? 50 : 60,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 10 : 14),
+                            Text(
+                              fraseError,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(blurRadius: 4, color: Colors.black54, offset: Offset(1, 2)),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: isSmallScreen ? 12 : 16),
+                            Center(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isSmallScreen ? 20 : 28, 
+                                    vertical: isSmallScreen ? 8 : 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(dialogContext);
+                                  setState(() {
+                                    _isDialogOpen = false;
+                                  });
+                                  _reiniciarEjercicio();
+                                },
+                                child: Text(
+                                  '¡Continuar!',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              ),
             );
           },
         );
@@ -857,6 +1573,22 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         (index) => {"silaba": "", "ocupado": false, "id": null},
       );
       _dividirEnSilabas(); // Esto mezclará las sílabas de nuevo
+      // Resetear keys
+      _firstSyllableKey = GlobalKey();
+      _firstSlotKey = GlobalKey();
+      _secondSyllableKey = GlobalKey();
+      _secondSlotKey = GlobalKey();
+      _tutorialSequenceId++;
+      // Si el tutorial ya fue lanzado en esta pantalla, reiniciarlo
+      if (_tutorialStartedOnCurrentScreen && !_tutorialCompleted) {
+        _showTutorial = true;
+        _tutorialStep = 0;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _showTutorial) {
+            _setTutorialStep(0);
+          }
+        });
+      }
     });
   }
 
@@ -904,7 +1636,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     "LIMÓN": ["LI", "MÓN"],
     "NARANJA": ["NA", "RAN", "JA"],
     "FRESA": ["FRE", "SA"],
-    "PLÁTANO": ["PLÁ", "TA", "NO"],
+    "BANANO": ["BA", "NA", "NO"],
     "SANDÍA": ["SAN", "DÍ", "A"],
     "MANZANA": ["MAN", "ZA", "NA"],
     "MELÓN": ["ME", "LÓN"],

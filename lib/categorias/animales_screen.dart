@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'item_detail_screen.dart';
 import '../constants/custombar_screen.dart'; // Agregar esta importación
+import '../services/tts_manager.dart';
 
 class AnimalesScreen extends StatefulWidget {
   @override
@@ -9,6 +10,10 @@ class AnimalesScreen extends StatefulWidget {
 }
 
 class _AnimalesScreenState extends State<AnimalesScreen> {
+  int _itemSize = 1; // 0=Pequeños, 1=Medianos, 2=Grandes
+  int _getPortraitColumns() => [3, 2, 1][_itemSize];
+  int _getLandscapeColumns() => [5, 4, 3][_itemSize];
+
   List<Map<String, dynamic>> animales = [
     {"nombre": "Gato", "imagen": "lib/utils/images/animales/gato.jpeg"},
     {"nombre": "Vaca", "imagen": "lib/utils/images/animales/vaca.jpeg"},
@@ -44,6 +49,15 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
   void initState() {
     super.initState();
     _cargarProgreso();
+    _loadItemSize();
+    TtsManager.instance.speak("Animales");
+  }
+
+  Future<void> _loadItemSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _itemSize = prefs.getInt('metodo3ItemSize') ?? 1;
+    });
   }
 
   Future<void> _cargarProgreso() async {
@@ -96,24 +110,23 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
   }
 
   void _seleccionarAnimal(String animal) async {
-    Map<String, dynamic>? animalSeleccionado = animales.firstWhere(
-      (item) => item["nombre"] == animal,
-    );
+    final int index = animales.indexWhere((a) => a['nombre'] == animal);
+    Map<String, dynamic> animalSeleccionado = animales[index];
     
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ItemDetailScreen(
           nombre: animalSeleccionado["nombre"],
           imagen: animalSeleccionado["imagen"],
           categoria: "Animales",
+          allItems: animales,
+          currentIndex: index,
         ),
       ),
     );
 
-    if (result != null && result['completado'] == true) {
-      await _marcarComoCompletado(animal);
-    }
+    await _cargarProgreso();
   }
 
   @override
@@ -140,7 +153,9 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
           child: Column(
             children: [
               // Banner con instrucciones
-              Container(
+              GestureDetector(
+                onTap: () => TtsManager.instance.speak("Selecciona un animal para aprender a escribir su nombre"),
+                child: Container(
                 padding: EdgeInsets.all(15),
                 margin: EdgeInsets.only(bottom: 15),
                 decoration: BoxDecoration(
@@ -158,18 +173,22 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                   "Selecciona un animal para aprender a escribir su nombre",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(1, 2)),
+                    ],
                   ),
                 ),
+              ),
               ),
               
               // Grid con los animales
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 2 : 4,
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns() : _getLandscapeColumns(),
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,
@@ -260,7 +279,10 @@ class _AnimalesScreenState extends State<AnimalesScreen> {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 18,
+                            shadows: [
+                              Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(1, 2)),
+                            ],
                           ),
                         ),
                       ),

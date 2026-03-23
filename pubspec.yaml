@@ -32,6 +32,7 @@ flutter:
     - lib/utils/images/
     - lib/utils/images/animales/
     - lib/utils/images/frutas/
+    - lib/utils/images/fondos/
     - lib/utils/gifs/    # Cambiar videos por gifs
 
   # Si usas fuentes personalizadas, descomenta y configura esta sección
