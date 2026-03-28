@@ -29,11 +29,16 @@ flutter:
   uses-material-design: true
   
   assets:
+    - lib/utils/musica/
     - lib/utils/images/
     - lib/utils/images/animales/
     - lib/utils/images/frutas/
+    - lib/utils/images/colores/
+    - lib/utils/images/verduras/
+    - lib/utils/images/numeros/
+    - lib/utils/images/familia/
     - lib/utils/images/fondos/
-    - lib/utils/gifs/    # Cambiar videos por gifs
+    - lib/utils/gifs/
 
   # Si usas fuentes personalizadas, descomenta y configura esta sección
   # fonts:

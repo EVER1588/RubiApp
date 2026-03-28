@@ -11,7 +11,11 @@ class ColoresScreen extends StatefulWidget {
 
 class _ColoresScreenState extends State<ColoresScreen> {
   int _itemSize = 1;
-  int _getPortraitColumns() => [3, 2, 1][_itemSize];
+  int _getPortraitColumns(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.shortestSide > 600;
+    if (isTablet) return [4, 3, 2][_itemSize];
+    return [3, 2, 1][_itemSize];
+  }
   int _getLandscapeColumns() => [5, 4, 3][_itemSize];
 
   List<Map<String, dynamic>> colores = [
@@ -37,6 +41,29 @@ class _ColoresScreenState extends State<ColoresScreen> {
     _cargarProgreso();
     _loadItemSize();
     TtsManager.instance.speak("Colores");
+  }
+
+  ModalRoute? _currentRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_currentRoute == null) {
+      _currentRoute = ModalRoute.of(context);
+      _currentRoute?.secondaryAnimation?.addStatusListener(_onRouteChanged);
+    }
+  }
+
+  void _onRouteChanged(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && mounted) {
+      _cargarProgreso();
+    }
+  }
+
+  @override
+  void dispose() {
+    _currentRoute?.secondaryAnimation?.removeStatusListener(_onRouteChanged);
+    super.dispose();
   }
 
   Future<void> _loadItemSize() async {
@@ -114,9 +141,11 @@ class _ColoresScreenState extends State<ColoresScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
+        titleText: 'Colores',
         onBackPressed: () {
           Navigator.pop(context);
         },
+        onSettingsPressed: () => mostrarAjustesTamanio(context, _itemSize, (v) => setState(() => _itemSize = v)),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -166,7 +195,7 @@ class _ColoresScreenState extends State<ColoresScreen> {
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns() : _getLandscapeColumns(),
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns(context) : _getLandscapeColumns(),
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,

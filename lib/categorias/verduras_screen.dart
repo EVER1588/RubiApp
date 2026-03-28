@@ -11,7 +11,12 @@ class VerdurasScreen extends StatefulWidget {
 
 class _VerdurasScreenState extends State<VerdurasScreen> {
   int _itemSize = 1;
-  int _getPortraitColumns() => [3, 2, 1][_itemSize];
+  ModalRoute? _currentRoute;
+  int _getPortraitColumns(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.shortestSide > 600;
+    if (isTablet) return [4, 3, 2][_itemSize];
+    return [3, 2, 1][_itemSize];
+  }
   int _getLandscapeColumns() => [5, 4, 3][_itemSize];
 
   List<Map<String, dynamic>> verduras = [
@@ -25,7 +30,7 @@ class _VerdurasScreenState extends State<VerdurasScreen> {
     {"nombre": "Brócoli", "imagen": "lib/utils/images/verduras/brocoli.jpeg"},
     {"nombre": "Pepino", "imagen": "lib/utils/images/verduras/pepino.jpeg"},
     {"nombre": "Calabaza", "imagen": "lib/utils/images/verduras/calabaza.jpeg"},
-    {"nombre": "Pimiento", "imagen": "lib/utils/images/verduras/pimiento.jpeg"},
+    {"nombre": "Chile", "imagen": "lib/utils/images/verduras/chile.jpeg"},
     {"nombre": "Espinaca", "imagen": "lib/utils/images/verduras/espinaca.jpeg"},
     {"nombre": "Chayote", "imagen": "lib/utils/images/verduras/chayote.jpeg"},
     {"nombre": "Coliflor", "imagen": "lib/utils/images/verduras/coliflor.jpeg"},
@@ -39,6 +44,27 @@ class _VerdurasScreenState extends State<VerdurasScreen> {
     _cargarProgreso();
     _loadItemSize();
     TtsManager.instance.speak("Verduras");
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_currentRoute == null) {
+      _currentRoute = ModalRoute.of(context);
+      _currentRoute?.secondaryAnimation?.addStatusListener(_onRouteChanged);
+    }
+  }
+
+  void _onRouteChanged(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && mounted) {
+      _cargarProgreso();
+    }
+  }
+
+  @override
+  void dispose() {
+    _currentRoute?.secondaryAnimation?.removeStatusListener(_onRouteChanged);
+    super.dispose();
   }
 
   Future<void> _loadItemSize() async {
@@ -116,9 +142,11 @@ class _VerdurasScreenState extends State<VerdurasScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomBar(
+        titleText: 'Verduras',
         onBackPressed: () {
           Navigator.pop(context);
         },
+        onSettingsPressed: () => mostrarAjustesTamanio(context, _itemSize, (v) => setState(() => _itemSize = v)),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -168,7 +196,7 @@ class _VerdurasScreenState extends State<VerdurasScreen> {
               Expanded(
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns() : _getLandscapeColumns(),
+                    crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? _getPortraitColumns(context) : _getLandscapeColumns(),
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: 0.85,

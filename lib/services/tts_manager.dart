@@ -31,7 +31,7 @@ class TtsManager {
     // Sílabas especiales y dígrafos
     'BE': 'bé', 'BLE': 'blé', 'CE': 'cé', 'CU': 'cú', 'CLA': 'clá', 'CLI': 'clí',
     'CLO': 'cló', 'CLU': 'clú', 'FLA': 'flá', 'FRA': 'frá', 'GE': 'gué',
-    'GI': 'guí', 'GO': 'gó', 'HI': 'i', 'HO': 'o', 'HU': 'u',
+    'GI': 'guí', 'GO': 'gó', 'HI': 'i', 'HO': 'o', 'HU': 'u', 'ÁL': 'al', 'ÁR':'ar',
     'JE': 'jé', 'JO': 'jó', 'JU': 'jú', 'KE': 'que', 'TO': 'tó',
     'TRU': 'trú', 'US': 'ús', 'VO': 'vó', 'XA': 'sá', 'XE': 'sé',
     'XI': 'sí', 'XO': 'só', 'XU': 'sú', 'QUE': 'ke', 'QUI': 'ki',
@@ -39,6 +39,17 @@ class TtsManager {
     'LLO': 'yo', 'LLU': 'yu', 'RRA': 'rá', 'RRE': 'ré', 'RRI': 'rí',
     'RRO': 'ró', 'RRU': 'rú', 'UL': 'hul', 'CLE': 'clé', 'GLE': 'glé',
     'CRE': 'cré', 'GRE': 'gré', 'WA': 'wá', 'WI': 'wí', 'WEB': 'wéb',
+
+    'Be': 'bé', 'Ble': 'blé', 'Ce': 'cé', 'Cu': 'cú', 'Cla': 'clá', 'Cli': 'clí',
+    'Clo': 'cló', 'Clu': 'clú', 'Fla': 'flá', 'Fra': 'frá', 'Ge': 'gué',
+    'Gi': 'guí', 'Go': 'gó', 'Hi': 'i', 'Ho': 'o', 'Hu': 'u', 'Ál': 'al', 'Ár':'ar', 
+    'Je': 'jé', 'Jo': 'jó', 'Ju': 'jú', 'Ke': 'que', 'To': 'tó',
+    'Tru': 'trú', 'Us': 'ús', 'Vo': 'vó', 'Xa': 'sá', 'Xe': 'sé',
+    'Xi': 'sí', 'Xo': 'só', 'Xu': 'sú', 'Que': 'ke', 'Qui': 'ki',
+    'Gue': 'ge', 'Gui': 'gi', 'Lla': 'ya', 'Lle': 'ye', 'Lli': 'yi',
+    'Llo': 'yo', 'Llu': 'yu', 'Rra': 'rá', 'Rre': 'ré', 'Rri': 'rí',
+    'Rro': 'ró', 'Rru': 'rú', 'Ul': 'hul', 'Cle': 'clé', 'Gle': 'glé',
+    'Cre': 'cré', 'Gre': 'gré', 'Wa': 'wá', 'Wi': 'wí', 'Web': 'wéb',
   };
 
 

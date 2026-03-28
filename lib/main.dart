@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/bienvenida_screen.dart';
+import 'screens/menu_screen.dart';
+import 'services/music_manager.dart';
 import 'services/tts_manager.dart';
 
 void main() async {
@@ -34,6 +35,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+      MusicManager.instance.resumeAll();
+    } else if (state == AppLifecycleState.paused) {
+      MusicManager.instance.stopAll();
+      TtsManager.instance.stop();
     }
   }
 
@@ -45,7 +50,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: BienvenidaScreen(),
+      home: MenuScreen(),
     );
   }
 }

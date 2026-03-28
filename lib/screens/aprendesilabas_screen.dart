@@ -46,6 +46,9 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   // Esquema de color para teclado colorido (0-4)
   int _colorfulScheme = 0;
 
+  // Ratio para el divisor arrastrable en landscape (sílabas vs teclado)
+  double _landscapeRatio = 0.5;
+
   // Índice de color para teclado uniforme  
   int _uniformColorIndex = 0; // Azul clásico por defecto
 
@@ -154,6 +157,24 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   // Colores de las letras sueltas en modo clásico (por posición en el bloque actual)
   final Map<int, Color> _classicLetterColors = {};
 
+  // ─── Variables para animación demostrativa de borrado (10 sílabas) ─────────────
+  bool _showDeleteDemo = false;
+  String? _demoDeleteSyllable;
+  late AnimationController _deleteDemoController;
+  bool _deleteDemoShownThisSession = false;
+  final GlobalKey _deleteButtonKey = GlobalKey();
+  final GlobalKey _lastSyllableChipKey = GlobalKey();
+  int? _demoSyllableIndex;
+  int _deleteDemoRepeatCount = 0; // Contador de repeticiones (5 veces)
+
+  // Key del body Stack para convertir coordenadas globales a locales del Stack
+  final GlobalKey _bodyStackKey = GlobalKey();
+
+  // ─── Variables para animación idle de letras del teclado ────────────────────────
+  Timer? _idleBounceTimer;
+  String? _bouncingLetter;
+  late AnimationController _idleBounceController;
+
   @override
   void initState() {
     super.initState();
@@ -227,6 +248,27 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         setState(() { _isMergingClassic = false; });
       }
     });
+
+    // Controlador para animación demostrativa de borrado (3000ms - más lenta)
+    _deleteDemoController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 3000),
+    );
+    // No usamos listener aquí porque _playDeleteDemo maneja el loop de 5 repeticiones
+
+    // Controlador para animación idle de letras del teclado
+    _idleBounceController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+    _idleBounceController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _idleBounceController.reverse();
+      } else if (status == AnimationStatus.dismissed && _bouncingLetter != null) {
+        setState(() { _bouncingLetter = null; });
+      }
+    });
+    _startIdleBounceTimer();
   }
 
   Future<void> _loadViewMode() async {
@@ -273,8 +315,8 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     final hasCompletedFirstSyllable = prefs.getBool('aprendesilabas_tutorial_completed') ?? false;
     
     if (!hasCompletedFirstSyllable) {
-      // Esperar un momento para que la UI se construya
-      await Future.delayed(Duration(milliseconds: 1200));
+      // Esperar a que termine el TTS del nombre de pantalla antes del tutorial
+      await Future.delayed(Duration(milliseconds: 1800)); // antes 2000ms
       if (mounted) {
         setState(() {
           _showTutorial = true;
@@ -365,22 +407,27 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                 }
                 final size = renderBox.size;
                 
-                // Centro de la letra
+                // Convertir coordenadas globales a locales del body Stack
+                double bodyOffsetY = 0.0;
+                final stackBox = _bodyStackKey.currentContext?.findRenderObject() as RenderBox?;
+                if (stackBox != null && stackBox.hasSize) {
+                  bodyOffsetY = stackBox.localToGlobal(Offset.zero).dy;
+                }
+                
+                // Centro de la letra en coordenadas del Stack
                 final targetCenter = Offset(
                   position.dx + size.width / 2,
-                  position.dy + size.height / 2,
+                  position.dy + size.height / 2 - bodyOffsetY,
                 );
                 
                 // Tamaño de la imagen
-                const double handSize = 380.0;
-                const double pointerVerticalOffset = -90.0;
+                const double handSize = 200.0;
                 
-                // Posicionar la imagen: la punta del dedo está en el centro de la imagen
-                // por lo que centramos la imagen directamente en el punto objetivo
+                // Posicionar: la punta (parte superior) debe apuntar al target
                 final bounceOffsetY = _tutorialHandBounce.value * 10;
                 
                 final handX = targetCenter.dx - handSize / 2;
-                final handY = targetCenter.dy - handSize / 2 + pointerVerticalOffset + bounceOffsetY;
+                final handY = targetCenter.dy + bounceOffsetY;
                 
                 return Positioned(
                   left: handX,
@@ -399,6 +446,239 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     );
   }
 
+  // Inicia la demostración de borrado de sílabas (cuando se crean 5 sílabas)
+  Future<void> _playDeleteDemo(String syllable) async {
+    if (_deleteDemoShownThisSession) return; // Solo mostrar una vez
+
+    // Buscar el índice de esta sílaba en la lista
+    final syllableIndex = _syllables.lastIndexWhere(
+      (s) => s.isNotEmpty && _validSyllables.contains(s.toUpperCase()) && s == syllable,
+    );
+
+    setState(() {
+      _showDeleteDemo = true;
+      _demoDeleteSyllable = syllable;
+      _demoSyllableIndex = syllableIndex >= 0 ? syllableIndex : 0;
+      _deleteDemoRepeatCount = 0; // Inicializar contador
+    });
+
+    // Ejecutar la animación 5 veces
+    for (int i = 0; i < 5; i++) {
+      _deleteDemoRepeatCount = i + 1;
+      _deleteDemoController.forward(from: 0.0);
+      await Future.delayed(Duration(milliseconds: 3200)); // Delay entre repeticiones (duración + pequeño gap)
+    }
+
+    setState(() {
+      _deleteDemoShownThisSession = true;
+      _showDeleteDemo = false;
+    });
+  }
+
+  // Widget overlay para la demostración de borrado
+  Widget _buildDeleteDemoOverlay() {
+    if (!_showDeleteDemo || _demoDeleteSyllable == null) return SizedBox.shrink();
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _deleteDemoController,
+          builder: (context, child) {
+            final progress = _deleteDemoController.value;
+
+            // Fade in (0-0.15), move (0.15-0.85), fade out (0.85-1.0)
+            const double fadeInEnd = 0.15;
+            const double moveStart = 0.15;
+            const double moveEnd = 0.85;
+            const double fadeOutStart = 0.85;
+
+            // Calcular opacidad
+            double opacity = 1.0;
+            if (progress < fadeInEnd) {
+              opacity = (progress / fadeInEnd).clamp(0.0, 1.0);
+            } else if (progress > fadeOutStart) {
+              opacity = 1.0 - ((progress - fadeOutStart) / (1.0 - fadeOutStart)).clamp(0.0, 1.0);
+            }
+
+            // Calcular progreso de movimiento
+            final moveProgress = ((progress - moveStart) / (moveEnd - moveStart)).clamp(0.0, 1.0);
+            final curveProgress = Curves.easeInOutCubic.transform(moveProgress);
+
+            // Posición exacta del último chip desde GlobalKey
+            final lastSyllablePos = _getSyllablePosition();
+            final deleteButtonPos = _getDeleteButtonPosition();
+
+            if (lastSyllablePos == null || deleteButtonPos == null) {
+              return SizedBox.shrink();
+            }
+
+            // Tamaño real del chip/módulo desde la key
+            final chipBox = _lastSyllableChipKey.currentContext?.findRenderObject() as RenderBox?;
+            final ghostSize = (chipBox != null && chipBox.hasSize)
+                ? chipBox.size
+                : (_useModules ? const Size(120, 52) : const Size(80, 48));
+
+            // Interpolar posición del CENTRO del ghost
+            final currentPos = Offset(
+              lastSyllablePos.dx + (deleteButtonPos.dx - lastSyllablePos.dx) * curveProgress,
+              lastSyllablePos.dy + (deleteButtonPos.dy - lastSyllablePos.dy) * curveProgress,
+            );
+
+            const double handSize = 180.0;
+            final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+            final double fingerTipOffsetY = isLandscape ? -60.0 : -10.0;
+
+            // Obtener la posición global del body Stack para convertir
+            // coordenadas absolutas (localToGlobal) a coordenadas locales del Stack.
+            double bodyOffsetY = 0.0;
+            final stackBox = _bodyStackKey.currentContext?.findRenderObject() as RenderBox?;
+            if (stackBox != null && stackBox.hasSize) {
+              bodyOffsetY = stackBox.localToGlobal(Offset.zero).dy;
+            }
+
+            // Construir el ghost widget según el modo actual
+            Widget ghostWidget;
+            if (_useModules) {
+              // Modo MODERNO: ghost como módulo completo
+              const moduleColors = [
+                Color(0xFFE3F2FD), Color(0xFFFCE4EC), Color(0xFFE8F5E9),
+                Color(0xFFFFF3E0), Color(0xFFF3E5F5), Color(0xFFE0F7FA),
+              ];
+              final moduleColor = moduleColors[(_demoSyllableIndex ?? 0) % moduleColors.length];
+              final syllableText = _demoDeleteSyllable!;
+              final letters = syllableText.split('');
+              final displaySyllable = _formatSyllableForDisplay(syllableText, _demoSyllableIndex ?? 0);
+
+              final List<Widget> rowChildren = [];
+              for (int j = 0; j < letters.length; j++) {
+                if (j > 0) rowChildren.add(_moduleOperator('+'));
+                final displayChar = j == 0 ? letters[j].toUpperCase() : letters[j].toLowerCase();
+                rowChildren.add(Expanded(
+                  child: _moduleLetterChip(displayChar, color: _getActiveButtonColor(letters[j].toUpperCase())),
+                ));
+              }
+              rowChildren.add(_moduleOperator('='));
+              rowChildren.add(Expanded(
+                flex: 2,
+                child: _moduleResultChip(displaySyllable),
+              ));
+
+              ghostWidget = Container(
+                width: ghostSize.width,
+                height: ghostSize.height,
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: moduleColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green, width: 2),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: rowChildren,
+                ),
+              );
+            } else {
+              // Modo CLÁSICO: ghost como Chip verde
+              ghostWidget = Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.45),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  _formatSyllableForDisplay(_demoDeleteSyllable!, _demoSyllableIndex ?? 0),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
+                    shadows: [Shadow(blurRadius: 3, color: Colors.black38, offset: Offset(1, 1))],
+                  ),
+                ),
+              );
+            }
+
+            return Stack(
+              children: [
+                // Sílaba fantasma posicionada por su CENTRO (convertida a coords del Stack)
+                Positioned(
+                  left: currentPos.dx - ghostSize.width / 2,
+                  top: currentPos.dy - bodyOffsetY - ghostSize.height / 2,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: ghostWidget,
+                  ),
+                ),
+
+                // DEBUG
+                ...[() {
+                  return SizedBox.shrink();
+                }()],
+
+                // Manita: usa la misma corrección bodyOffsetY que el ghost,
+                // más fingerTipOffsetY que desplaza la imagen para que la parte
+                // activa de la mano quede visualmente sobre el ghost.
+                Positioned(
+                  left: currentPos.dx - handSize / 2,
+                  top: currentPos.dy - bodyOffsetY + fingerTipOffsetY,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Image.asset(
+                      'lib/utils/images/fondos/manita.png',
+                      width: handSize,
+                      height: handSize,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Obtiene la posición central exacta del último chip de sílaba (desde GlobalKey)
+  Offset? _getSyllablePosition() {
+    try {
+      final chipBox = _lastSyllableChipKey.currentContext?.findRenderObject() as RenderBox?;
+      if (chipBox == null || !chipBox.hasSize) return null;
+      final chipPos = chipBox.localToGlobal(Offset.zero);
+      return Offset(
+        chipPos.dx + chipBox.size.width / 2,
+        chipPos.dy + chipBox.size.height / 2,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Obtiene la posición del botón Borrar (basurero)
+  Offset? _getDeleteButtonPosition() {
+    try {
+      final buttonBox = _deleteButtonKey.currentContext?.findRenderObject() as RenderBox?;
+      if (buttonBox == null || !buttonBox.hasSize) return null;
+      
+      final buttonPos = buttonBox.localToGlobal(Offset.zero);
+      return Offset(
+        buttonPos.dx + buttonBox.size.width / 2,
+        buttonPos.dy + buttonBox.size.height / 2,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Genera colores aleatorios para cada letra (esquema "Aleatorio")
   void _generateRandomColors() {
     final rng = math.Random();
@@ -410,11 +690,27 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
   
   @override
   void dispose() {
+    _idleBounceTimer?.cancel();
+    _idleBounceController.dispose();
     _scrollController.dispose();
     _syllableAnimController.dispose();
     _mergeAnimController.dispose();
     _tutorialHandController.dispose();
+    _deleteDemoController.dispose();
     super.dispose();
+  }
+
+  // ─── Animación idle: salto aleatorio de letras del teclado ─────────────────────
+  void _startIdleBounceTimer() {
+    _idleBounceTimer?.cancel();
+    _idleBounceTimer = Timer.periodic(Duration(seconds: 3), (_) {
+      if (!mounted || _showTutorial || _showDeleteDemo || _isAnimating) return;
+      final activeKeys = _letters.where((l) => _activeLetters[l] == true).toList();
+      if (activeKeys.isEmpty) return;
+      final letter = activeKeys[math.Random().nextInt(activeKeys.length)];
+      setState(() { _bouncingLetter = letter; });
+      _idleBounceController.forward(from: 0.0);
+    });
   }
 
   // Reproduce el texto usando TtsManager
@@ -745,6 +1041,15 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         _onFirstSyllableCompleted();
       }
       
+      // Contar sílabas completadas para la demostración de borrado
+      final completedSyllablesCount = _syllables.where((s) => s.isNotEmpty).length;
+      if (!_deleteDemoShownThisSession && completedSyllablesCount == 5) {
+        // Disparar la animación de demostración de borrado
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _playDeleteDemo(formedSyllable);
+        });
+      }
+      
       // Esperar un momento después de leer
       await Future.delayed(Duration(milliseconds: 500));
       
@@ -937,7 +1242,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     
     return Scaffold(
-      appBar: isLandscape ? null : CustomBar(
+      appBar: CustomBar(
         titleText: 'Aprende Sílabas',
         onBackPressed: () => Navigator.pop(context),
         onHelpPressed: _mostrarAyuda,
@@ -945,10 +1250,13 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         onSettingsPressed: _mostrarAjustes,
       ),
       body: Stack(
+        key: _bodyStackKey,
         children: [
           isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
           // Overlay del tutorial
           if (_showTutorial) _buildTutorialHandOverlay(),
+          // Overlay de demostración de borrado
+          if (_showDeleteDemo) _buildDeleteDemoOverlay(),
         ],
       ),
     );
@@ -965,7 +1273,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
               key: _syllableContainerKey,
               width: double.infinity,
               height: double.infinity, // Expandir al máximo disponible
-              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               padding: EdgeInsets.only(left: 4, right: 4, top: 4, bottom: 4), // Reducido padding derecho
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.blueAccent, width: 3),
@@ -999,13 +1307,14 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                       alignment: WrapAlignment.start,
                       children: [
                         // Mostrar sílabas completadas como bloques verdes
-                        // PERO NO mostrar el bloque actual si aún estamos mostrando letras sueltas
-                        ..._syllables.asMap().entries.where((entry) {
-                          final isValid = _validSyllables.contains(entry.value.toUpperCase());
-                          final isCurrentBlock = entry.key == _currentBlockIndex;
-                          // Mostrar solo si: es válido Y (NO es el bloque actual O ya ocultamos las letras sueltas)
-                          return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
-                        }).map((entry) {
+                        ...() {
+                          final completed = _syllables.asMap().entries.where((entry) {
+                            final isValid = _validSyllables.contains(entry.value.toUpperCase());
+                            final isCurrentBlock = entry.key == _currentBlockIndex;
+                            return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
+                          }).toList();
+                          return completed.map((entry) {
+                          final isLastChip = completed.isNotEmpty && entry == completed.last;
                           return Draggable<Map<String, dynamic>>(
                             data: {
                               'type': 'syllable',
@@ -1034,6 +1343,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                               },
                               child: _isMergingClassic && entry.value == _classicMergeSyllable
                                 ? Container(
+                                    key: isLastChip ? _lastSyllableChipKey : null,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
@@ -1064,6 +1374,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                                     ),
                                   )
                                 : Container(
+                                    key: isLastChip ? _lastSyllableChipKey : null,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
@@ -1088,7 +1399,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                                   ),
                             ),
                           );
-                        }).toList(),
+                          }).toList(); }(),
                         
                         // Mostrar letras de la sílaba actual como elementos sueltos SOLO si debe mostrarlas
                         if (_showCurrentLooseLetters && _syllables[_currentBlockIndex].isNotEmpty)
@@ -1266,301 +1577,305 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
 
   // Layout en modo horizontal (landscape)
   Widget _buildLandscapeLayout() {
-    return Builder(
-      builder: (context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
         final isTablet = _isTablet(context);
+        final spacerWidth = isTablet ? 0.0 : constraints.maxWidth * 0.032;
+        const dividerWidth = 36.0;
+        // Botones: misma proporción que antes (flex:2 de 16 unidades totales)
+        final buttonsWidth = (constraints.maxWidth - spacerWidth) * 2 / 16;
+        final remainingWidth = constraints.maxWidth - spacerWidth - buttonsWidth - dividerWidth;
+        final syllablesWidth = remainingWidth * _landscapeRatio;
+        final keyboardWidth = remainingWidth * (1 - _landscapeRatio);
+
         return Row(
           children: [
-            // Spacer para evitar cámara frontal en phones (solo en phones)
-            // Calcula dinámicamente basado en el ancho de pantalla (~4% del ancho)
-            if (!isTablet)
-              SizedBox(width: MediaQuery.of(context).size.width * 0.032),
-            
-            // Columna de sílabas con título - Izquierda
-            Expanded(
-              flex: 7,
+            // Spacer para evitar cámara frontal en phones
+            if (!isTablet) SizedBox(width: spacerWidth),
+
+            // Contenedor de sílabas - tamaño dinámico
+            SizedBox(
+              width: syllablesWidth,
+              child: _buildSyllablesContainerLandscape(),
+            ),
+
+            // Barra vertical arrastrable
+            MouseRegion(
+              cursor: SystemMouseCursors.resizeColumn,
+              child: GestureDetector(
+                onHorizontalDragUpdate: (details) {
+                  setState(() {
+                    _landscapeRatio += details.delta.dx / remainingWidth;
+                    _landscapeRatio = _landscapeRatio.clamp(0.45, 0.60);
+                  });
+                },
+                child: Container(
+                  width: dividerWidth,
+                  padding: EdgeInsets.only(left: 4),
+                  color: Colors.blueAccent.withOpacity(0.15),
+                  child: Center(
+                    child: Container(
+                      width: 4,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Columna de botones - Centro (tamaño fijo, igual que antes)
+            SizedBox(
+              width: buttonsWidth,
               child: Column(
                 children: [
-              // Título con botón de retroceso
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                  // Botón Borrar (basurero) - arriba
+                  Expanded(
+                    flex: 10,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 4, top: 9, left: 8, right: 0),
+                      child: _buildDeleteDragTarget(),
                     ),
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text(
-                        'Formar Sílabas',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                  ),
+                  // Espacio vacío entre botones
+                  Expanded(
+                    flex: 3,
+                    child: SizedBox(),
+                  ),
+                  // Botón Limpiar (rojo) - abajo
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 9, top: 4, left: 8, right: 0),
+                      child: SizedBox.expand(
+                        child: ElevatedButton(
+                          onPressed: _clearSyllable,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.all(0),
+                            elevation: 5,
+                            shadowColor: Colors.red.withOpacity(0.6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.black, width: 2),
+                            ),
+                          ),
+                          child: Text(
+                            'Limpiar',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(Icons.help_outline_rounded),
-                      onPressed: _mostrarAyuda,
-                      tooltip: 'Ayuda',
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.info_outline_rounded),
-                      onPressed: _mostrarEstadisticas,
-                      tooltip: 'Estadísticas',
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.settings_rounded),
-                      onPressed: _mostrarAjustes,
-                      tooltip: 'Ajustes',
                   ),
                 ],
               ),
+            ),
+
+            // Teclado - tamaño dinámico
+            SizedBox(
+              width: keyboardWidth,
+              child: _buildKeyboardLandscape(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Construye el contenedor de sílabas para landscape
+  Widget _buildSyllablesContainerLandscape() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          key: _syllableContainerKey,
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          margin: EdgeInsets.only(left: 10, right: 1, top: 2, bottom: 8),
+          padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.blueAccent, width: 3),
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.blue.withOpacity(0.1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.2),
+                blurRadius: 8,
+                offset: Offset(0, 4),
               ),
-
-
-              // Contenedor de sílabas
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Container(
-                      key: _syllableContainerKey,
-                      width: constraints.maxWidth,
-                      height: constraints.maxHeight,
-                      margin: EdgeInsets.only(left: 10, right: 1, top: 2, bottom: 8), // Más espacio a la derecha
-                      padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blueAccent, width: 3),
-                        borderRadius: BorderRadius.circular(15),
-                        color: Colors.blue.withOpacity(0.1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Scrollbar(
-                            controller: _scrollController,
-                            thickness: 8.0,
-                            radius: Radius.circular(4.0),
-                            thumbVisibility: true,
-                            child: SingleChildScrollView(
-                              controller: _scrollController,
-                              child: _useModules
-                                ? LayoutBuilder(
-                                    builder: (context, constraints) =>
-                                      _buildModulesContent(constraints.maxWidth),
-                                  )
-                                : Wrap(
-                                spacing: 12.0,
-                                runSpacing: 12.0,
-                                alignment: WrapAlignment.start,
-                                children: [
-                                  ..._syllables.asMap().entries.where((entry) {
-                                    final isValid = _validSyllables.contains(entry.value.toUpperCase());
-                                    final isCurrentBlock = entry.key == _currentBlockIndex;
-                                    return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
-                                  }).map((entry) {
-                                    return Draggable<Map<String, dynamic>>(
-                                      data: {
-                                        'type': 'syllable',
-                                        'index': entry.key,
-                                        'silaba': entry.value,
-                                      },
-                                      feedback: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Material(
-                                          elevation: 8,
-                                          child: Chip(
-                                            label: Text(
-                                              _formatSyllableForDisplay(entry.value, entry.key),
-                                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                            ),
-                                            backgroundColor: Colors.green,
-                                            labelStyle: TextStyle(color: Colors.white),
-                                          ),
-                                        ),
-                                      ),
-                                      childWhenDragging: SizedBox.shrink(),
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          _speak(entry.value.toUpperCase());
-                                        },
-                                        child: Chip(
-                                          label: Text(
-                                            _formatSyllableForDisplay(entry.value, entry.key),
-                                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                          ),
-                                          backgroundColor: Colors.green,
-                                          labelStyle: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  if (_showCurrentLooseLetters && _syllables[_currentBlockIndex].isNotEmpty)
-                                    ..._syllables[_currentBlockIndex].split('').asMap().entries.map((letterEntry) {
-                                      final isLast = letterEntry.key == _syllables[_currentBlockIndex].length - 1;
-                                      final isAnimating = isLast && _animatingLetter != null;
-                                      final letterColor = _classicLetterColors[letterEntry.key] ?? Colors.blueAccent;
-                                      return Draggable<Map<String, dynamic>>(
-                                        data: {
-                                          'type': 'letter',
-                                          'index': letterEntry.key,
-                                          'letter': letterEntry.value,
-                                        },
-                                        feedback: Material(
-                                          elevation: 8,
-                                          child: Chip(
-                                            label: Text(
-                                              letterEntry.value,
-                                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                            ),
-                                            backgroundColor: letterColor,
-                                            labelStyle: TextStyle(color: Colors.white),
-                                          ),
-                                        ),
-                                        childWhenDragging: SizedBox.shrink(),
-                                        child: GestureDetector(
-                                          onTap: () => _speak(letterEntry.value.toUpperCase()),
-                                          child: Opacity(
-                                            opacity: isAnimating ? 0 : 1,
-                                            child: Material(
-                                              elevation: 4,
-                                              borderRadius: BorderRadius.circular(20),
-                                              child: Chip(
-                                                key: isLast ? _nextLetterPositionKey : null,
-                                                label: Text(
-                                                  letterEntry.value,
-                                                  style: TextStyle(
-                                                    fontSize: 24,
-                                                    fontWeight: FontWeight.bold,
-                                                    shadows: [
-                                                      Shadow(
-                                                        blurRadius: 3,
-                                                        color: Colors.black38,
-                                                        offset: Offset(1, 1),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                backgroundColor: letterColor,
-                                                labelStyle: TextStyle(color: Colors.white),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                ],
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Scrollbar(
+                controller: _scrollController,
+                thickness: 8.0,
+                radius: Radius.circular(4.0),
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: _useModules
+                    ? LayoutBuilder(
+                        builder: (context, constraints) =>
+                          _buildModulesContent(constraints.maxWidth),
+                      )
+                    : Wrap(
+                      spacing: 12.0,
+                      runSpacing: 12.0,
+                      alignment: WrapAlignment.start,
+                      children: [
+                        ...() {
+                          final completed = _syllables.asMap().entries.where((entry) {
+                            final isValid = _validSyllables.contains(entry.value.toUpperCase());
+                            final isCurrentBlock = entry.key == _currentBlockIndex;
+                            return isValid && entry.value.isNotEmpty && (!isCurrentBlock || !_showCurrentLooseLetters);
+                          }).toList();
+                          return completed.map((entry) {
+                          final isLastChip = completed.isNotEmpty && entry == completed.last;
+                          return Draggable<Map<String, dynamic>>(
+                            data: {
+                              'type': 'syllable',
+                              'index': entry.key,
+                              'silaba': entry.value,
+                            },
+                            feedback: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Material(
+                                elevation: 8,
+                                child: Chip(
+                                  label: Text(
+                                    _formatSyllableForDisplay(entry.value, entry.key),
+                                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  labelStyle: TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Columna de botones - Centro (entre sílabas y teclado)
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              // Botón Borrar (basurero) - arriba
-              Expanded(
-                flex: 10,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 4, top: 9, left: 8, right: 0),
-                  child: _buildDeleteDragTarget(),
-                ),
-              ),
-              // Espacio vacío entre botones
-              Expanded(
-                flex: 3,
-                child: SizedBox(),
-              ),
-              // Botón Limpiar (rojo) - abajo
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 9, top: 4, left: 8, right: 0),
-                  child: SizedBox.expand(
-                    child: ElevatedButton(
-                      onPressed: _clearSyllable,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.all(0),
-                        elevation: 5,
-                        shadowColor: Colors.red.withOpacity(0.6),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.black, width: 2),
-                        ),
-                      ),
-                      child: Text(
-                        'Limpiar',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
+                            childWhenDragging: SizedBox.shrink(),
+                            child: GestureDetector(
+                              onTap: () {
+                                _speak(entry.value.toUpperCase());
+                              },
+                              child: isLastChip
+                                ? Container(
+                                    key: _lastSyllableChipKey,
+                                    child: Chip(
+                                      label: Text(
+                                        _formatSyllableForDisplay(entry.value, entry.key),
+                                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                      ),
+                                      backgroundColor: Colors.green,
+                                      labelStyle: TextStyle(color: Colors.white),
+                                    ),
+                                  )
+                                : Chip(
+                                    label: Text(
+                                      _formatSyllableForDisplay(entry.value, entry.key),
+                                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    labelStyle: TextStyle(color: Colors.white),
+                                  ),
+                            ),
+                          );
+                          }).toList(); }(),
+                        if (_showCurrentLooseLetters && _syllables[_currentBlockIndex].isNotEmpty)
+                          ..._syllables[_currentBlockIndex].split('').asMap().entries.map((letterEntry) {
+                            final isLast = letterEntry.key == _syllables[_currentBlockIndex].length - 1;
+                            final isAnimating = isLast && _animatingLetter != null;
+                            final letterColor = _classicLetterColors[letterEntry.key] ?? Colors.blueAccent;
+                            return Draggable<Map<String, dynamic>>(
+                              data: {
+                                'type': 'letter',
+                                'index': letterEntry.key,
+                                'letter': letterEntry.value,
+                              },
+                              feedback: Material(
+                                elevation: 8,
+                                child: Chip(
+                                  label: Text(
+                                    letterEntry.value,
+                                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: letterColor,
+                                  labelStyle: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              childWhenDragging: SizedBox.shrink(),
+                              child: GestureDetector(
+                                onTap: () => _speak(letterEntry.value.toUpperCase()),
+                                child: Opacity(
+                                  opacity: isAnimating ? 0 : 1,
+                                  child: Material(
+                                    elevation: 4,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Chip(
+                                      key: isLast ? _nextLetterPositionKey : null,
+                                      label: Text(
+                                        letterEntry.value,
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 3,
+                                              color: Colors.black38,
+                                              offset: Offset(1, 1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      backgroundColor: letterColor,
+                                      labelStyle: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                      ],
                     ),
-                  ),
                 ),
               ),
             ],
           ),
-        ),
-        // Columna de teclado - Derecha
-        Expanded(
-          flex: 7,
-          child: Column(
-            children: [
-              // Teclado de letras (5 columnas en landscape)
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    const int crossAxisCount = 5;
-                    const double spacing = 8;
-                    const double pad = 10;
-                    final int rowCount = (_letters.length / crossAxisCount).ceil();
-                    final double cellWidth = (constraints.maxWidth - pad * 2 - spacing * (crossAxisCount - 1)) / crossAxisCount;
-                    final double cellHeight = (constraints.maxHeight - pad * 2 - spacing * (rowCount - 1)) / rowCount;
-                    final double ratio = cellHeight > 0 ? cellWidth / cellHeight : 1.0;
-                    return GridView.builder(
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(pad),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: spacing,
-                        mainAxisSpacing: spacing,
-                        childAspectRatio: ratio,
-                      ),
-                      itemCount: _letters.length,
-                      itemBuilder: (context, index) {
-                        return _buildLetterButton(_letters[index]);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  // Construye el teclado para landscape
+  Widget _buildKeyboardLandscape() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const int crossAxisCount = 5;
+        const double spacing = 8;
+        const double pad = 10;
+        final int rowCount = (_letters.length / crossAxisCount).ceil();
+        final double cellWidth = (constraints.maxWidth - pad * 2 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+        final double cellHeight = (constraints.maxHeight - pad * 2 - spacing * (rowCount - 1)) / rowCount;
+        final double ratio = cellHeight > 0 ? cellWidth / cellHeight : 1.0;
+        return GridView.builder(
+          physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.all(pad),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: ratio,
+          ),
+          itemCount: _letters.length,
+          itemBuilder: (context, index) {
+            return _buildLetterButton(_letters[index]);
+          },
+        );
       },
     );
   }
@@ -1592,6 +1907,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
               }
             },
             child: Container(
+              key: _deleteButtonKey,
               decoration: BoxDecoration(
                 border: Border.all(
                   color: candidateData.isNotEmpty ? Colors.red : Colors.red.shade700,
@@ -1655,6 +1971,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
 
   Widget _buildLetterButton(String letter) {
     final bool isActive = _activeLetters[letter]!;
+    final bool isBouncing = _bouncingLetter == letter;
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calcula el tamaño de fuente basado en el espacio disponible
@@ -1666,16 +1983,8 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
         String displayLetter = _getDisplayLetter(letter);
         
         final activeColor = _getActiveButtonColor(letter);
-        
-        return AnimatedScale(
-          scale: isActive ? 1.0 : 0.6,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.elasticOut,
-          child: AnimatedOpacity(
-            opacity: isActive ? 1.0 : 0.35,
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-            child: Container(
+
+        Widget button = Container(
               key: _letterKeys[letter],
               width: constraints.maxWidth,
               height: constraints.maxHeight,
@@ -1706,7 +2015,35 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                   ),
                 ),
               ),
-            ),
+        );
+
+        // Idle bounce animation
+        if (isBouncing) {
+          button = AnimatedBuilder(
+            animation: _idleBounceController,
+            builder: (context, child) {
+              final t = Curves.easeOut.transform(_idleBounceController.value);
+              return Transform.translate(
+                offset: Offset(0, -6 * t),
+                child: Transform.scale(
+                  scale: 1.0 + 0.08 * t,
+                  child: child,
+                ),
+              );
+            },
+            child: button,
+          );
+        }
+        
+        return AnimatedScale(
+          scale: isActive ? 1.0 : 0.6,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.elasticOut,
+          child: AnimatedOpacity(
+            opacity: isActive ? 1.0 : 0.35,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            child: button,
           ),
         );
       },
@@ -1892,6 +2229,12 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
           builder: (context, setDialogState) {
             return Dialog(
               backgroundColor: Colors.transparent,
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 600
+                    ? MediaQuery.of(context).size.width * 0.22
+                    : 40,
+                vertical: 24,
+              ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               child: Container(
                 decoration: BoxDecoration(
@@ -1910,7 +2253,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
                       // Fondo con imagen
                       Positioned.fill(
                         child: Image.asset(
-                          'lib/utils/images/escuela.jpeg',
+                          'lib/utils/images/fondos/fondo 1.jpg',
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -2210,7 +2553,10 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
     const double scrollMargin = 50.0;
     const double spacing = 8.0;
     final double availableWidth = containerWidth - scrollMargin;
-    final double moduleWidth = (availableWidth - spacing) / 2;
+    // En tablets, 3 módulos por fila; en teléfonos, 2
+    final bool isTabletDevice = _isTablet(context);
+    final int modulesPerRow = isTabletDevice ? 3 : 2;
+    final double moduleWidth = (availableWidth - spacing * (modulesPerRow - 1)) / modulesPerRow;
     const double moduleHeight = 52.0;
 
     const moduleColors = [
@@ -2220,6 +2566,9 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
 
     List<Widget> modules = [];
 
+    final int lastCompleteIndex = _syllables.lastIndexWhere(
+      (s) => _validSyllables.contains(s.toUpperCase()) && s.isNotEmpty,
+    );
     for (int i = 0; i < _syllables.length; i++) {
       final syllable = _syllables[i];
       final isCurrentBlock = i == _currentBlockIndex;
@@ -2321,6 +2670,7 @@ class _Metodo1ScreenState extends State<Metodo1Screen> with TickerProviderStateM
       );
 
       Widget moduleWidget = Container(
+        key: i == lastCompleteIndex ? _lastSyllableChipKey : null,
         width: moduleWidth,
         height: moduleHeight,
         padding: EdgeInsets.all(4),

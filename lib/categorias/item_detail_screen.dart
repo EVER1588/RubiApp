@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/custombar_screen.dart'; // Agregar esta importación
+import '../constants/custombar_screen.dart';
 import '../services/tts_manager.dart';
+import '../services/music_manager.dart';
 import '../constants/state_manager.dart';
 
 class ItemDetailScreen extends StatefulWidget {
@@ -48,7 +49,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
   GlobalKey _secondSlotKey = GlobalKey();
   bool _tutorialStartedOnCurrentScreen = false;
 
+  // IDs de las sílabas del tutorial (para evitar conflictos con sílabas duplicadas como PA-PA)
+  String? _firstTutorialSyllableId;
+  String? _secondTutorialSyllableId;
+
   static const String _describeImagenTutorialShownKey = 'describe_imagen_tutorial_shown';
+  static const String _describeImagenTutorial2ShownKey = 'describe_imagen_tutorial2_shown';
+  bool _isStep2Tutorial = false; // true cuando es tutorial simplificado (2da imagen)
   
   // Controlar si hay un diálogo abierto
   bool _isDialogOpen = false;
@@ -61,6 +68,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
       'Verduras': 'verduras_completados',
       'Colores': 'colores_completados',
       'Números': 'numeros_completados',
+      'Familia': 'familia_completados',
     };
     return keys[widget.categoria] ?? '${widget.categoria.toLowerCase()}_completados';
   }
@@ -103,6 +111,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
         return Colors.orange;
       case "Números":
         return Colors.purple;
+      case "Familia":
+        return Colors.pink;
       default:
         return Colors.blue;
     }
@@ -114,6 +124,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     ttsManager.initialize();
     TtsManager.instance.speak(widget.nombre);
     _dividirEnSilabas();
+    _assignTutorialSyllableIds();
     silabasColocadas = List.generate(
       silabasOriginales.length,
       (index) => {"silaba": "", "ocupado": false, "id": null},
@@ -138,12 +149,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
   Future<void> _checkTutorial() async {
     final prefs = await SharedPreferences.getInstance();
     final bool tutorialAlreadyShown = prefs.getBool(_describeImagenTutorialShownKey) ?? false;
+    final bool tutorial2AlreadyShown = prefs.getBool(_describeImagenTutorial2ShownKey) ?? false;
 
     if (_isTutorialEligibleLevel && !tutorialAlreadyShown) {
-      // Esperar un momento para que la UI se construya
+      // Tutorial completo (1ra imagen)
       await Future.delayed(Duration(milliseconds: 800));
       if (mounted) {
         _launchTutorial();
+      }
+    } else if (_isTutorial2Eligible && !tutorial2AlreadyShown) {
+      // Tutorial simplificado (2da imagen)
+      await Future.delayed(Duration(milliseconds: 800));
+      if (mounted) {
+        _launchStep2Tutorial();
       }
     }
   }
@@ -152,8 +170,50 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     return widget.currentIndex != null && widget.currentIndex! < 2;
   }
 
+  bool get _isTutorial2Eligible {
+    return widget.currentIndex != null && widget.currentIndex == 1;
+  }
+
+  void _launchStep2Tutorial() {
+    if (!mounted || silabasOriginales.length < 2) return;
+
+    TtsManager.instance.speak(
+      'Toca las sílabas para escuchar cómo suenan, también puedes tocar la imagen para escuchar su nombre.',
+    );
+
+    setState(() {
+      _showTutorial = true;
+      _tutorialCompleted = false;
+      _tutorialStartedOnCurrentScreen = true;
+      _isStep2Tutorial = true;
+      _tutorialStep = 0; // Solo usaremos step 0 (bounce en primera sílaba)
+      _firstSyllableKey = GlobalKey();
+      _firstSlotKey = GlobalKey();
+      _secondSyllableKey = GlobalKey();
+      _secondSlotKey = GlobalKey();
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _showTutorial) {
+        // Solo bounce en primera sílaba, luego desaparece
+        _handAnimController.duration = const Duration(milliseconds: 850);
+        _handAnimController.repeat(reverse: true);
+
+        // Desaparece tras 4 segundos
+        Future.delayed(const Duration(seconds: 4), () {
+          if (!mounted || !_showTutorial || !_isStep2Tutorial) return;
+          _markTutorial2Completed();
+        });
+      }
+    });
+  }
+
   void _launchTutorial() {
     if (!mounted || silabasOriginales.length < 2) return;
+
+    TtsManager.instance.speak(
+      'Arrastra las sílabas para formar la palabra, colócalas correctamente y desbloquearás la siguiente imagen.',
+    );
 
     setState(() {
       _showTutorial = true;
@@ -215,11 +275,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
   double _getTutorialOverlayOpacity(double progress) {
     final double safeProgress = progress.clamp(0.0, 1.0);
     if (progress <= 0.12) {
-      final double fadeInT = (safeProgress / 0.12).clamp(0.0, 1.0);
+      final double fadeInT = (safeProgress / 0.06).clamp(0.0, 1.0);
       return Curves.easeOut.transform(fadeInT);
     }
-    if (safeProgress >= 0.82) {
-      final double fadeOutT = ((safeProgress - 0.82) / 0.18).clamp(0.0, 1.0);
+    if (safeProgress >= 0.83) {
+      final double fadeOutT = ((safeProgress - 0.83) / 0.17).clamp(0.0, 1.0);
       return 1 - Curves.easeIn.transform(fadeOutT);
     }
     return 1.0;
@@ -231,6 +291,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     setState(() {
       _tutorialCompleted = true;
       _showTutorial = false;
+      _isStep2Tutorial = false;
+    });
+    _tutorialSequenceId++;
+    _handAnimController.stop();
+  }
+
+  Future<void> _markTutorial2Completed() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_describeImagenTutorial2ShownKey, true);
+    setState(() {
+      _tutorialCompleted = true;
+      _showTutorial = false;
+      _isStep2Tutorial = false;
     });
     _tutorialSequenceId++;
     _handAnimController.stop();
@@ -255,6 +328,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
               Navigator.pop(context);
             },
             onHelpPressed: _mostrarAyuda,
+            onSettingsPressed: () => mostrarAjustesGlobales(context),
           ),
           body: isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
         ),
@@ -303,12 +377,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
               );
             }
             
-            // Centrar la imagen en el punto objetivo (la punta del dedo está en el centro de la imagen)
-            final handCenter = isDragStep
-                ? Offset(targetPos.dx + 42, targetPos.dy + 48)
-                : targetPos;
+            // Posicionar: la punta (parte superior) debe apuntar al target
+            // La punta del dedo ahora está en la parte superior de la imagen (y=0, centrada horizontalmente)
+            final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+            final double fingerTipOffsetY = isLandscape ? 0.0 : 0.0;
+            final handCenter = targetPos;
             final handX = handCenter.dx - handSize / 2;
-            final handY = handCenter.dy - handSize / 2;
+            final handY = handCenter.dy + fingerTipOffsetY;
             
             return Stack(
               children: [
@@ -495,9 +570,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Imagen ocupa ~40% de la altura de pantalla
+          // Imagen ocupa ~40% en pantallas grandes, ~32% en pequeñas
+          final bool isSmallScreen = constraints.maxHeight < 650;
           final imageConstraints = BoxConstraints(
-            maxHeight: constraints.maxHeight * 0.40,
+            maxHeight: constraints.maxHeight * (isSmallScreen ? 0.32 : 0.40),
             maxWidth: constraints.maxWidth,
           );
 
@@ -671,21 +747,42 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: categoryColor.withOpacity(0.5), width: 2.0),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            categoryColor.withOpacity(0.06),
+            Colors.white,
+            categoryColor.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: categoryColor.withOpacity(0.3), width: 2.0),
+        boxShadow: [
+          BoxShadow(
+            color: categoryColor.withOpacity(0.12),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            "Sílabas disponibles:",
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.bold,
-              color: categoryColor,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("✨ ", style: TextStyle(fontSize: titleSize)),
+              Text(
+                "Sílabas disponibles:",
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.bold,
+                  color: categoryColor,
+                ),
+              ),
+            ],
           ),
           Text(
             "Mantén para arrastrar · Desliza para ver más",
@@ -816,21 +913,42 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: categoryColor.withOpacity(0.5), width: 2.0),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            categoryColor.withOpacity(0.06),
+            Colors.white,
+            categoryColor.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: categoryColor.withOpacity(0.3), width: 2.0),
+        boxShadow: [
+          BoxShadow(
+            color: categoryColor.withOpacity(0.12),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            "Construye la palabra",
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.bold,
-              color: categoryColor,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("🧩 ", style: TextStyle(fontSize: titleSize)),
+              Text(
+                "Construye la palabra",
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.bold,
+                  color: categoryColor,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: gap),
           Expanded(
@@ -877,65 +995,67 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: categoryColor.withOpacity(0.5), width: 2.0),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            categoryColor.withOpacity(0.06),
+            Colors.white,
+            categoryColor.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: categoryColor.withOpacity(0.3), width: 2.0),
+        boxShadow: [
+          BoxShadow(
+            color: categoryColor.withOpacity(0.12),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            "Sílabas disponibles:",
-            style: TextStyle(
-              fontSize: titleSize,
-              fontWeight: FontWeight.bold,
-              color: categoryColor,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("✨ ", style: TextStyle(fontSize: titleSize)),
+              Text(
+                "Sílabas disponibles:",
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.bold,
+                  color: categoryColor,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: gap),
-          Wrap(
-            spacing: chipSpacing,
-            runSpacing: chipSpacing,
-            alignment: WrapAlignment.center,
-            children: silabas.map((silaba) => _buildDraggableSilaba(silaba, size: chipSize)).toList(),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Wrap(
+                spacing: chipSpacing,
+                runSpacing: chipSpacing,
+                alignment: WrapAlignment.center,
+                children: silabas.map((silaba) => _buildDraggableSilaba(silaba, size: chipSize)).toList(),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Mapa de correcciones fonéticas para sílabas que el TTS pronuncia incorrectamente
-  final Map<String, String> _phoneticOverrides = {
-    // Sílabas con O que el TTS pronuncia como "u" en inglés
-    'TO': 'tó',
-    'DO': 'dó',
-    'PO': 'pó',
-    'SO': 'só',
-    'LO': 'ló',
-    'NO': 'nó',
-    'MO': 'mó',
-    'RO': 'ró',
-    'CO': 'có',
-    'BO': 'bó',
-    'GO': 'gó',
-    'FO': 'fó',
-    'JO': 'jó',
-    'HO': 'hó',
-    'VO': 'vó',
-    'ZO': 'zó',
-  };
-
-  // Reemplazar el método decirTexto actual
+  // Método para pronunciar texto con correcciones fonéticas según TtsManager
   Future<void> decirTexto(String texto, {bool esSilaba = false}) async {
     if (esSilaba) {
-      // Convertir a mayúsculas para buscar en el mapa
-      String textoMayus = texto.toUpperCase();
-      // Si hay una corrección fonética, usar esa; si no, usar el texto original
-      String textoALeer = _phoneticOverrides[textoMayus] ?? texto;
-      await ttsManager.speakSpecialSyllable(textoALeer);
+      // Usar speakSyllable de TtsManager que tiene correcciones fonéticas completas
+      await TtsManager.instance.speakSyllable(texto);
     } else {
-      await ttsManager.speak(texto);
+      // Para texto normal, usar speak directo
+      await TtsManager.instance.speak(texto);
     }
   }
 
@@ -1048,14 +1168,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     // Verificar si la sílaba ya ha sido usada
     final bool isUsed = silabasColocadas.any((s) => s["id"] == silaba["id"] && s["ocupado"] == true);
     
-    // Determinar si esta sílaba corresponde al tutorial
+    // Determinar si esta sílaba corresponde al tutorial (por ID, no por texto)
     final bool isFirstTutorialSyllable = _showTutorial && 
-        silabasOriginales.isNotEmpty && 
-        silaba["silaba"] == silabasOriginales[0] &&
+        _firstTutorialSyllableId != null && 
+        silaba["id"] == _firstTutorialSyllableId &&
         _tutorialStep <= 1;
     final bool isSecondTutorialSyllable = _showTutorial && 
-        silabasOriginales.length > 1 && 
-        silaba["silaba"] == silabasOriginales[1] &&
+        _secondTutorialSyllableId != null && 
+        silaba["id"] == _secondTutorialSyllableId &&
         _tutorialStep >= 2;
     final bool isTutorialSyllable = isFirstTutorialSyllable || isSecondTutorialSyllable;
 
@@ -1573,6 +1693,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
         (index) => {"silaba": "", "ocupado": false, "id": null},
       );
       _dividirEnSilabas(); // Esto mezclará las sílabas de nuevo
+      _assignTutorialSyllableIds();
       // Resetear keys
       _firstSyllableKey = GlobalKey();
       _firstSlotKey = GlobalKey();
@@ -1628,6 +1749,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     "ARAÑA": ["A", "RA", "ÑA"],
     "RANA": ["RA", "NA"],
     "LOBO": ["LO", "BO"],
+
     // Frutas
     "MANGO": ["MAN", "GO"],
     "PERA": ["PE", "RA"],
@@ -1647,6 +1769,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     "CEREZA": ["CE", "RE", "ZA"],
     "GRANADA": ["GRA", "NA", "DA"],
     "KIWI": ["KI", "WI"],
+
     // Verduras
     "PAPA": ["PA", "PA"],
     "AJO": ["A", "JO"],
@@ -1658,12 +1781,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     "BRÓCOLI": ["BRÓ", "CO", "LI"],
     "PEPINO": ["PE", "PI", "NO"],
     "CALABAZA": ["CA", "LA", "BA", "ZA"],
-    "PIMIENTO": ["PI", "MIEN", "TO"],
+    "CHILE": ["CHI", "LE"],
     "ESPINACA": ["ES", "PI", "NA", "CA"],
     "CHAYOTE": ["CHA", "YO", "TE"],
     "COLIFLOR": ["CO", "LI", "FLOR"],
     "RÁBANO": ["RÁ", "BA", "NO"],
     "BERENJENA": ["BE", "REN", "JE", "NA"],
+    
     // Colores
     "ROJO": ["RO", "JO"],
     "AZUL": ["A", "ZUL"],
@@ -1678,6 +1802,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     "DORADO": ["DO", "RA", "DO"],
     "PLATEADO": ["PLA", "TE", "A", "DO"],
     "VIOLETA": ["VIO", "LE", "TA"],
+
     // Números
     "UNO": ["U", "NO"],
     "DOS": ["DOS"],
@@ -1691,8 +1816,29 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
     "DIEZ": ["DIEZ"],
     "ONCE": ["ON", "CE"],
     "DOCE": ["DO", "CE"],
+    "TRECE": ["TRE", "CE"],
+    "CATORCE": ["CA", "TOR", "CE"],
     "QUINCE": ["QUIN", "CE"],
+    "DIECISÉIS": ["DIE", "CI", "SÉIS"],
+    "DIECISIETE": ["DIE", "CI", "SIE", "TE"],
+    "DIECIOCHO": ["DIE", "CI", "O", "CHO"],
+    "DIECINUEVE": ["DIE", "CI", "NUE", "VE"],
     "VEINTE": ["VEIN", "TE"],
+
+     // Familia
+    "PAPÁ": ["PA", "PÁ"],
+    "MAMÁ": ["MA", "MÁ"],
+    "HIJO": ["HI", "JO"],
+    "HIJA": ["HI", "JA"],
+    "BEBÉ": ["BE", "BÉ"],
+    "ABUELO": ["A", "BUE", "LO"],
+    "ABUELA": ["A", "BUE", "LA"],
+    "TÍO": ["TÍ", "O"],
+    "TÍA": ["TÍ", "A"],
+    "PRIMO": ["PRI", "MO"],
+    "PRIMA": ["PRI", "MA"],
+    "HERMANO": ["HER", "MA", "NO"],
+    "HERMANA": ["HER", "MA", "NA"],
   };
 
   // Verificar si la palabra es un caso especial
@@ -1789,6 +1935,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> with TickerProvider
   print("Sílabas originales: $silabasOriginales");
   print("Todas las sílabas disponibles: $silabasTemp");
 }
+
+  /// Asigna IDs de sílabas del tutorial para evitar conflictos de GlobalKey
+  /// cuando hay sílabas duplicadas (ej: PA-PA en "Papa").
+  void _assignTutorialSyllableIds() {
+    _firstTutorialSyllableId = null;
+    _secondTutorialSyllableId = null;
+    if (silabasOriginales.isEmpty) return;
+
+    for (var s in silabas) {
+      if (s["silaba"] == silabasOriginales[0] && _firstTutorialSyllableId == null) {
+        _firstTutorialSyllableId = s["id"];
+        break;
+      }
+    }
+
+    if (silabasOriginales.length > 1) {
+      for (var s in silabas) {
+        if (s["silaba"] == silabasOriginales[1] && s["id"] != _firstTutorialSyllableId) {
+          _secondTutorialSyllableId = s["id"];
+          break;
+        }
+      }
+    }
+  }
 
 // Detectar si hay sílabas trabadas en la palabra
 List<String> _detectarSilabasTraabadas(List<String> silabas) {
